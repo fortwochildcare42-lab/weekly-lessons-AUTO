@@ -1,0 +1,1575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🚃 Let's Ride the Train! | 電車に乗ろう！</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cream:#EEF3F8;
+  --card:#FFFFFF;
+  --card-edge:#DCE6EF;
+  --espresso:#1B2A45;
+  --espresso-soft:#5C6B82;
+  --roast:#1E3A5F;
+  --roast-light:#2F5580;
+  --roast-wash:rgba(30,58,95,0.08);
+  --caramel:#C8102E;
+  --caramel-dark:#94081F;
+  --caramel-wash:rgba(200,16,46,0.11);
+  --cherry:#D9731F;
+  --cherry-wash:rgba(217,115,31,0.11);
+  --gold:#F2B705;
+  --sky:#2B7A8C;
+  --radius-lg:22px;
+  --radius-md:16px;
+  --radius-sm:11px;
+  --shadow:0 10px 26px rgba(20,32,50,0.16);
+  --shadow-sm:0 4px 12px rgba(20,32,50,0.12);
+  --font-display:'Baloo 2',sans-serif;
+  --font-body:'Zen Maru Gothic',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:132%;}
+body{
+  font-family:var(--font-body);
+  background:var(--cream);
+  color:var(--espresso);
+  overflow:hidden;height:100vh;
+  background-image:
+    radial-gradient(ellipse 70% 50% at 15% 8%, rgba(200,16,46,0.05), transparent),
+    radial-gradient(ellipse 60% 45% at 90% 95%, rgba(30,58,95,0.08), transparent);
+}
+#starCanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;}
+
+/* ===== TOP BAR ===== */
+#topBar{position:fixed;top:0;left:0;right:0;height:66px;background:var(--roast);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 22px;z-index:100;box-shadow:0 2px 0 var(--caramel);}
+#topBar h1{font-family:var(--font-display);font-size:1.3rem;font-weight:700;color:var(--cream);letter-spacing:0.2px;}
+#scoreDisplay{font-family:var(--font-display);font-size:1.2rem;font-weight:700;color:var(--espresso);
+  background:var(--gold);padding:7px 18px;border-radius:999px;box-shadow:var(--shadow-sm);}
+
+/* ===== STAMP CARD (badges) ===== */
+#badgeBar{position:fixed;top:66px;left:0;right:0;height:54px;background:var(--card);
+  display:flex;align-items:center;padding:0 18px;gap:12px;z-index:99;overflow-x:auto;
+  border-bottom:1px dashed var(--card-edge);}
+.badge-slot{
+  width:42px;height:42px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:1.15rem;
+  border:2px dashed var(--espresso-soft);opacity:0.45;
+  transition:all 0.35s cubic-bezier(.34,1.6,.64,1);cursor:default;background:transparent;
+}
+.badge-slot.earned{
+  opacity:1;border:2px solid var(--roast);background:var(--roast-wash);
+  transform:rotate(-8deg) scale(1.12);
+  box-shadow:inset 0 0 0 2px var(--card);
+}
+
+/* ===== SLIDES ===== */
+#slides{position:fixed;top:120px;bottom:104px;left:0;right:0;overflow-y:auto;z-index:10;
+  padding:22px clamp(90px, 6vw, 150px) 40px;}
+.slide{display:none;max-width:1900px;width:100%;margin:0 auto;animation:fadeIn 0.45s ease;}
+.slide.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+@media(max-width:900px){#slides{padding:18px 20px 40px;}}
+
+/* ===== NAV BAR ===== */
+#navBar{position:fixed;bottom:12px;left:12px;right:12px;height:80px;background:var(--espresso);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;z-index:100;border-radius:24px;box-shadow:0 8px 22px rgba(0,0,0,0.35);}
+.nav-btn{background:var(--caramel);color:var(--cream);border:none;border-radius:999px;padding:16px 34px;
+  font-size:1.25rem;font-weight:700;cursor:pointer;transition:transform 0.18s,box-shadow 0.18s;
+  font-family:var(--font-display);box-shadow:var(--shadow-sm);min-width:120px;}
+.nav-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,0.28);}
+.nav-btn:disabled{opacity:0.3;cursor:default;transform:none;box-shadow:none;}
+#dotContainer{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;max-width:40%;}
+.dot{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,0.22);cursor:pointer;
+  transition:background 0.3s,transform 0.3s;}
+.dot.active{background:var(--gold);transform:scale(1.6);}
+
+/* ===== SIDE ARROW BUTTONS (Zoom等の画面共有でも押しやすい大きな矢印) ===== */
+.side-arrow{position:fixed;top:50%;transform:translateY(-50%);z-index:110;
+  width:64px;height:64px;border-radius:50%;background:var(--caramel);color:var(--cream);
+  border:3px solid var(--cream);font-size:1.8rem;font-family:var(--font-display);font-weight:700;
+  cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;
+  transition:transform 0.18s,box-shadow 0.18s,opacity 0.18s;}
+.side-arrow:hover:not(:disabled){transform:translateY(-50%) scale(1.1);box-shadow:0 8px 22px rgba(0,0,0,0.45);}
+.side-arrow:disabled{opacity:0.25;cursor:default;transform:translateY(-50%);}
+#sideArrowPrev{left:14px;}
+#sideArrowNext{right:14px;}
+@media(max-width:760px){.side-arrow{width:50px;height:50px;font-size:1.4rem;}}
+
+/* ===== CARD ===== */
+.card{background:var(--card);border-radius:var(--radius-lg);padding:36px 44px;
+  margin-bottom:16px;border:1px solid var(--card-edge);box-shadow:var(--shadow);}
+.slide-title{font-family:var(--font-display);font-size:1.9rem;font-weight:700;color:var(--roast);
+  margin-bottom:8px;text-align:center;}
+.slide-sub{font-size:1.05rem;color:var(--espresso-soft);text-align:center;margin-bottom:20px;}
+
+/* ===== VOCAB GRID ===== */
+.vocab-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:18px;margin-top:16px;}
+.vocab-card{background:var(--card);border-radius:var(--radius-md);padding:20px 14px 16px;text-align:center;
+  border:2px dashed var(--card-edge);transition:transform 0.2s,border-color 0.2s;position:relative;}
+.vocab-card:nth-child(3n+1){transform:rotate(-1.1deg);}
+.vocab-card:nth-child(3n+2){transform:rotate(0.8deg);}
+.vocab-card:nth-child(3n){transform:rotate(-0.4deg);}
+.vocab-card:hover{transform:translateY(-4px) rotate(0deg);border-color:var(--caramel);}
+.vocab-en{font-family:var(--font-display);font-size:1.25rem;font-weight:700;color:var(--roast);}
+.vocab-jp{font-size:0.95rem;color:var(--espresso-soft);margin:5px 0 10px;}
+.speak-btn{background:var(--caramel);border:none;border-radius:999px;width:46px;height:46px;
+  cursor:pointer;transition:all 0.2s;color:var(--cream);font-size:1.2rem;font-family:var(--font-body);
+  box-shadow:var(--shadow-sm);}
+.speak-btn:hover{transform:scale(1.14);background:var(--caramel-dark);}
+button[data-slow="1"]{background:var(--cherry)!important;transform:scale(1.18);}
+
+/* ===== LISTEN LIST ===== */
+.listen-list{list-style:none;display:flex;flex-direction:column;gap:14px;}
+.listen-item{background:var(--card);border-radius:var(--radius-sm);padding:18px 22px;
+  display:flex;align-items:center;gap:16px;border-left:4px solid var(--roast);box-shadow:var(--shadow-sm);}
+.listen-en{font-weight:700;font-size:1.25rem;flex:1;font-family:var(--font-display);color:var(--espresso);}
+.listen-jp{font-size:0.95rem;color:var(--espresso-soft);}
+
+/* ===== TYPING ===== */
+.typing-hint{background:rgba(43,122,140,0.1);border:1px solid var(--sky);border-radius:var(--radius-sm);
+  padding:14px 20px;margin-bottom:14px;color:var(--sky);font-size:1.15rem;}
+.typing-input{background:var(--card);border:2px solid var(--gold);border-radius:var(--radius-sm);
+  padding:14px 20px;color:var(--espresso);font-size:1.3rem;font-family:var(--font-body);
+  width:100%;max-width:420px;}
+.typing-input:focus{outline:none;border-color:var(--roast);}
+.check-btn{background:var(--roast);color:var(--cream);border:none;border-radius:var(--radius-sm);padding:15px 32px;
+  font-size:1.15rem;font-weight:700;cursor:pointer;margin-top:14px;font-family:var(--font-display);
+  transition:transform 0.18s;box-shadow:var(--shadow-sm);}
+.check-btn:hover{transform:translateY(-2px);}
+.feedback{font-size:1.2rem;font-weight:700;margin-top:14px;min-height:30px;font-family:var(--font-display);}
+
+/* ===== WORD SORT ===== */
+.wsort-area{display:flex;flex-wrap:wrap;gap:12px;min-height:66px;background:var(--roast-wash);
+  border-radius:var(--radius-sm);padding:14px;margin-bottom:16px;border:2px dashed var(--roast-light);}
+.wsort-tiles{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px;}
+.tile{background:var(--caramel);color:var(--cream);border:none;border-radius:var(--radius-sm);padding:14px 22px;
+  font-size:1.3rem;font-weight:700;cursor:pointer;font-family:var(--font-display);
+  transition:transform 0.15s,background 0.2s;box-shadow:var(--shadow-sm);}
+.tile:hover{transform:scale(1.08);background:var(--cherry);}
+.tile.placed{background:var(--roast);}
+
+/* ===== MEMORY MATCH ===== */
+.match-grid{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-top:20px;}
+.mcard-wrap{width:130px;height:130px;perspective:600px;cursor:pointer;}
+.mcard{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform 0.5s ease;}
+.mcard.flipped{transform:rotateY(180deg);}
+.mcard-front,.mcard-back{position:absolute;inset:0;border-radius:var(--radius-sm);backface-visibility:hidden;
+  display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-sm);}
+.mcard-front{background:var(--caramel);font-size:2.6rem;}
+.mcard-back{background:var(--gold);color:var(--espresso);transform:rotateY(180deg);
+  font-size:1.05rem;font-weight:900;text-align:center;padding:6px;line-height:1.3;font-family:var(--font-display);}
+.mcard.matched .mcard-back{background:var(--roast);color:var(--cream);}
+.mcard.matched .mcard-front{background:var(--roast);}
+
+/* ===== ROLE PLAY ===== */
+.rp-container{display:flex;flex-direction:column;gap:18px;padding:4px 0;}
+.rp-row{display:flex;align-items:flex-end;gap:14px;}
+.rp-row.row-b{flex-direction:row-reverse;}
+.rp-avatar{width:72px;height:72px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:2.3rem;flex-shrink:0;border:2px solid;background:var(--card);}
+.rp-row.row-a .rp-avatar{border-color:var(--roast);}
+.rp-row.row-b .rp-avatar{border-color:var(--caramel);}
+.rp-bubble-wrap{max-width:72%;display:flex;flex-direction:column;gap:6px;}
+.rp-row.row-b .rp-bubble-wrap{align-items:flex-end;}
+.rp-speech{padding:16px 20px;border-radius:20px;}
+.rp-row.row-a .rp-speech{background:var(--roast-wash);border:1.5px solid var(--roast);
+  border-bottom-left-radius:4px;}
+.rp-row.row-b .rp-speech{background:var(--caramel-wash);border:1.5px solid var(--caramel);
+  border-bottom-right-radius:4px;}
+.rp-en{font-size:1.25rem;font-weight:700;color:var(--espresso);font-family:var(--font-display);}
+.rp-jp{font-size:0.98rem;color:var(--espresso-soft);margin-top:4px;}
+.rp-speak-wrap{display:flex;margin-top:6px;}
+.rp-row.row-b .rp-speak-wrap{justify-content:flex-end;}
+
+/* ===== FIND IT ===== */
+.findit-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:16px;}
+.fi-item{background:var(--card);border-radius:var(--radius-sm);padding:22px 12px;text-align:center;
+  font-size:1.5rem;cursor:pointer;border:2px solid var(--card-edge);transition:all 0.2s;
+  line-height:1.3;word-break:break-word;box-shadow:var(--shadow-sm);}
+.fi-item:hover{border-color:var(--gold);transform:scale(1.06);}
+.fi-item.found{border-color:var(--roast);background:var(--roast-wash);pointer-events:none;}
+.fi-item.wrong-tap{border-color:var(--cherry);animation:shake 0.3s;}
+.fi-target{background:var(--caramel-wash);border:2px dashed var(--caramel);border-radius:var(--radius-sm);
+  padding:18px;text-align:center;font-size:1.2rem;margin-bottom:18px;font-family:var(--font-display);color:var(--caramel-dark);}
+@keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-6px);}75%{transform:translateX(6px);}}
+
+/* ===== TRIP BUILDER ===== */
+.order-options{display:flex;flex-wrap:wrap;gap:14px;margin:12px 0;}
+.order-opt{background:var(--card);border:2px solid var(--card-edge);
+  border-radius:var(--radius-sm);padding:16px 24px;cursor:pointer;font-size:1.15rem;font-weight:700;
+  transition:all 0.2s;font-family:var(--font-body);color:var(--espresso);}
+.order-opt:hover{background:var(--roast-wash);border-color:var(--roast);}
+.order-opt.selected{background:var(--roast);border-color:var(--roast);color:var(--cream);}
+.cup-display{background:var(--roast-wash);border:2px solid var(--roast);border-radius:var(--radius-md);
+  padding:22px;text-align:center;font-size:1.4rem;min-height:74px;margin-bottom:16px;font-family:var(--font-display);color:var(--roast);}
+
+/* ===== SPEED GAME ===== */
+.size-cards{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin-top:18px;}
+.size-card{background:var(--card);border-radius:var(--radius-md);padding:26px;text-align:center;
+  cursor:pointer;border:2px solid var(--card-edge);transition:all 0.25s;min-width:140px;box-shadow:var(--shadow-sm);}
+.size-card:hover{border-color:var(--gold);transform:translateY(-4px);}
+.size-card.correct-pick{border-color:var(--roast);background:var(--roast-wash);}
+.size-card.wrong-pick{border-color:var(--cherry);background:var(--cherry-wash);}
+
+/* ===== STATION DETECTIVE ===== */
+.mikke-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:18px;}
+.mikke-cell{background:var(--card);border-radius:var(--radius-sm);height:100px;
+  display:flex;align-items:center;justify-content:center;font-size:2.4rem;cursor:pointer;
+  border:2px solid var(--card-edge);transition:all 0.2s;user-select:none;}
+.mikke-cell:hover{border-color:var(--sky);transform:scale(1.08);}
+.mikke-cell.found-m{border-color:var(--roast);background:var(--roast-wash);pointer-events:none;}
+.mikke-cell.wrong-m{animation:shake 0.3s;}
+
+/* ===== QUIZ ===== */
+.quiz-q{font-size:1.4rem;font-weight:700;margin-bottom:18px;line-height:1.5;font-family:var(--font-display);color:var(--espresso);}
+.quiz-choices{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.choice-btn{background:var(--card);border:2px solid var(--card-edge);
+  border-radius:var(--radius-sm);padding:22px;color:var(--espresso);font-size:1.2rem;font-weight:700;cursor:pointer;
+  transition:all 0.2s;font-family:var(--font-body);}
+.choice-btn:hover{background:var(--roast-wash);border-color:var(--roast);}
+.choice-btn.correct{background:var(--roast)!important;border-color:var(--roast);color:var(--cream)!important;}
+.choice-btn.wrong{background:var(--cherry)!important;border-color:var(--cherry);color:var(--cream)!important;}
+.choice-btn:disabled{cursor:default;}
+
+/* ===== REVIEW ===== */
+.review-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin-top:16px;}
+.review-card{background:var(--roast-wash);border-radius:var(--radius-sm);padding:18px 12px;text-align:center;
+  border:1px solid var(--roast-light);font-size:1.1rem;}
+
+/* ===== SUMMARY ===== */
+.summary-badges{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-top:20px;}
+.sum-badge{background:var(--card);border-radius:var(--radius-md);padding:18px 26px;
+  font-size:1.4rem;text-align:center;border:1px solid var(--card-edge);}
+.sum-badge.earned{background:var(--roast-wash);border-color:var(--roast);}
+
+/* CONFETTI */
+.confetti-piece{position:fixed;width:9px;height:9px;border-radius:2px;
+  animation:confettiFall 2s ease-out forwards;z-index:9999;pointer-events:none;}
+@keyframes confettiFall{0%{transform:translateY(-20px) rotate(0deg);opacity:1;}
+  100%{transform:translateY(100vh) rotate(720deg);opacity:0;}}
+
+/* RESPONSIVE */
+@media(max-width:600px){
+  .vocab-grid{grid-template-columns:repeat(2,1fr);}
+  .quiz-choices{grid-template-columns:1fr;}
+  .mcard-wrap{width:84px;height:84px;}
+  .findit-grid{grid-template-columns:repeat(3,1fr);}
+  .mikke-grid{grid-template-columns:repeat(4,1fr);}
+  .size-cards{gap:8px;}
+}
+</style>
+</head>
+<body>
+<canvas id="starCanvas"></canvas>
+
+<div id="topBar">
+  <h1>🚃 Let's Ride the Train!</h1>
+  <div id="scoreDisplay">⭐ 0</div>
+</div>
+
+<div id="badgeBar">
+  <span class="badge-slot" id="badge0" title="Typing Star">⌨️</span>
+  <span class="badge-slot" id="badge1" title="Sort Master">🔀</span>
+  <span class="badge-slot" id="badge2" title="Match Master">🃏</span>
+  <span class="badge-slot" id="badge3" title="Who Am I? Master">🤔</span>
+  <span class="badge-slot" id="badge4" title="Find It! Star">🔍</span>
+  <span class="badge-slot" id="badge5" title="Trip Master">🎫</span>
+  <span class="badge-slot" id="badge6" title="Speed Expert">🚄</span>
+  <span class="badge-slot" id="badge7" title="Station Detective">🔎</span>
+  <span class="badge-slot" id="badge8" title="Quiz Master">📝</span>
+</div>
+
+<div id="slides">
+
+<!-- SLIDE 1: タイトル -->
+<div class="slide active" id="slide-0">
+  <div style="text-align:center;padding:10px 0;">
+    <img src="https://images.unsplash.com/photo-1718945649075-c3e55c4271e6?w=1200&q=80"
+         alt="Train station" style="width:100%;max-width:600px;border-radius:20px;box-shadow:var(--shadow);margin-bottom:20px;">
+    <h2 style="font-family:var(--font-display);font-size:2.2rem;font-weight:700;color:var(--roast);">🚃 Let's Ride the Train!</h2>
+    <p style="font-size:1.1rem;color:var(--espresso-soft);margin-top:8px;">電車に乗ろう！</p>
+    <p style="margin-top:14px;color:var(--caramel-dark);font-size:1rem;">
+      Today we learn <strong style="color:var(--roast);">24 words</strong> about riding the train! 🌟
+    </p>
+    <div style="margin-top:20px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <span style="background:var(--roast-wash);border:1px solid var(--roast);border-radius:20px;padding:6px 16px;font-size:0.88rem;color:var(--roast);">🎮 9 Games</span>
+      <span style="background:var(--caramel-wash);border:1px solid var(--caramel);border-radius:20px;padding:6px 16px;font-size:0.88rem;color:var(--caramel-dark);">🏆 9 Stamps</span>
+      <span style="background:rgba(43,122,140,0.1);border:1px solid var(--sky);border-radius:20px;padding:6px 16px;font-size:0.88rem;color:var(--sky);">🔊 Tap to listen</span>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 2: イントロ -->
+<div class="slide" id="slide-1">
+  <div class="card">
+    <div class="slide-title">🚉 What is a Station?</div>
+    <div class="slide-sub">駅ってどんなところ？</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div style="background:var(--roast-wash);border-radius:var(--radius-md);padding:14px;text-align:center;border:1px solid var(--roast-light);">
+        <div style="font-size:2rem;">🎫</div><div style="font-weight:700;color:var(--roast);font-family:var(--font-display);">Buy a Ticket</div>
+        <div style="font-size:0.8rem;color:var(--espresso-soft);">きっぷを買う</div>
+      </div>
+      <div style="background:var(--roast-wash);border-radius:var(--radius-md);padding:14px;text-align:center;border:1px solid var(--roast-light);">
+        <div style="font-size:2rem;">🛤️</div><div style="font-weight:700;color:var(--roast);font-family:var(--font-display);">Wait on the Platform</div>
+        <div style="font-size:0.8rem;color:var(--espresso-soft);">ホームで待つ</div>
+      </div>
+      <div style="background:var(--roast-wash);border-radius:var(--radius-md);padding:14px;text-align:center;border:1px solid var(--roast-light);">
+        <div style="font-size:2rem;">🚃</div><div style="font-weight:700;color:var(--roast);font-family:var(--font-display);">Get on the Train</div>
+        <div style="font-size:0.8rem;color:var(--espresso-soft);">電車に乗る</div>
+      </div>
+      <div style="background:var(--roast-wash);border-radius:var(--radius-md);padding:14px;text-align:center;border:1px solid var(--roast-light);">
+        <div style="font-size:2rem;">🚶</div><div style="font-weight:700;color:var(--roast);font-family:var(--font-display);">Get Off at Your Stop</div>
+        <div style="font-size:0.8rem;color:var(--espresso-soft);">駅でおりる</div>
+      </div>
+    </div>
+    <p style="margin-top:16px;text-align:center;color:var(--caramel-dark);">Let's learn how to ride the train in English! 🗣️</p>
+  </div>
+</div>
+
+<!-- SLIDE 3: 語彙① -->
+<div class="slide" id="slide-2">
+  <div class="card">
+    <div class="slide-title">🚃 Ways to Travel（のりもの）</div>
+    <div class="vocab-grid" id="vocab1"></div>
+  </div>
+</div>
+
+<!-- SLIDE 4: 語彙② -->
+<div class="slide" id="slide-3">
+  <div class="card">
+    <div class="slide-title">⏱️ Speed & Time（はやさと じかん）</div>
+    <div class="vocab-grid" id="vocab2"></div>
+  </div>
+</div>
+
+<!-- SLIDE 5: 語彙③ -->
+<div class="slide" id="slide-4">
+  <div class="card">
+    <div class="slide-title">🚉 At the Station（えきで）</div>
+    <div class="vocab-grid" id="vocab3"></div>
+  </div>
+</div>
+
+<!-- SLIDE 6: リスニング -->
+<div class="slide" id="slide-5">
+  <div class="card">
+    <div class="slide-title">👂 Listen & Repeat!</div>
+    <div class="slide-sub">聞いてまねしよう！</div>
+    <ul class="listen-list" id="listenList"></ul>
+  </div>
+</div>
+
+<!-- SLIDE 7: フレーズ -->
+<div class="slide" id="slide-6">
+  <div class="card">
+    <div class="slide-title">💬 Useful Phrases（つかえるフレーズ）</div>
+    <ul class="listen-list" id="phraseList"></ul>
+  </div>
+</div>
+
+<!-- SLIDE 8: タイピング -->
+<div class="slide" id="slide-7">
+  <div class="card">
+    <div class="slide-title">⌨️ Typing Challenge!</div>
+    <div class="slide-sub">タイプしてみよう！</div>
+    <div id="typingArea"></div>
+    <div style="text-align:center;margin-top:14px;">
+      <span style="color:var(--caramel-dark);font-size:0.9rem;">問題 <span id="tq-num">1</span> / <span id="tq-total">8</span></span>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 9: ワードソート -->
+<div class="slide" id="slide-8">
+  <div class="card">
+    <div class="slide-title">🔀 Word Sort!</div>
+    <div class="slide-sub">文字をならべかえよう！</div>
+    <div id="wsort-hint" class="typing-hint"></div>
+    <p style="font-size:0.85rem;color:var(--espresso-soft);margin-bottom:8px;">↓ ここにならべよう</p>
+    <div class="wsort-area" id="wsort-answer"></div>
+    <div class="wsort-tiles" id="wsort-tiles"></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="check-btn" onclick="checkWSort()">✅ Check!</button>
+      <button class="check-btn" style="background:var(--caramel);" onclick="resetWSort()">🔄 Reset</button>
+    </div>
+    <div class="feedback" id="wsort-fb"></div>
+    <div style="text-align:center;margin-top:10px;">
+      <span style="color:var(--caramel-dark);font-size:0.9rem;">問題 <span id="ws-num">1</span> / <span id="ws-total">6</span></span>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 10: 神経衰弱 -->
+<div class="slide" id="slide-9">
+  <div class="card">
+    <div class="slide-title">🃏 Memory Match!</div>
+    <div class="slide-sub">絵文字とスペルをマッチしよう！</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <span style="color:var(--caramel-dark);">Pairs: <span id="match-pairs">0</span>/8</span>
+      <button class="check-btn" onclick="initMatch()" style="padding:6px 16px;font-size:0.85rem;">🔄 Reset</button>
+    </div>
+    <div class="match-grid" id="matchGrid"></div>
+  </div>
+</div>
+
+<!-- SLIDE 11: ロールプレイA -->
+<div class="slide" id="slide-10">
+  <div class="card">
+    <div class="slide-title">🎭 Role Play A!</div>
+    <div class="slide-sub">きっぷを買おう！（前半）</div>
+    <div class="rp-container" id="rpA"></div>
+    <p style="color:var(--espresso-soft);font-size:0.8rem;text-align:center;margin-top:12px;">🔊 をタップして聞いてみよう！</p>
+  </div>
+</div>
+
+<!-- SLIDE 12: ロールプレイB -->
+<div class="slide" id="slide-11">
+  <div class="card">
+    <div class="slide-title">🎭 Role Play B!</div>
+    <div class="slide-sub">ホームで電車を待とう！（後半）</div>
+    <div class="rp-container" id="rpB"></div>
+    <p style="color:var(--espresso-soft);font-size:0.8rem;text-align:center;margin-top:12px;">🎤 Practice with a friend!</p>
+  </div>
+</div>
+
+<!-- SLIDE 13: Who Am I? -->
+<div class="slide" id="slide-12">
+  <div class="card">
+    <div class="slide-title">🤔 Who Am I?</div>
+    <div class="slide-sub">ヒントをよんであてよう！</div>
+    <div id="waiArea"></div>
+    <div style="text-align:center;margin-top:10px;">
+      <span style="color:var(--caramel-dark);font-size:0.9rem;">問題 <span id="wai-num">1</span> / 5</span>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 14: Find It! -->
+<div class="slide" id="slide-13">
+  <div class="card">
+    <div class="slide-title">🔍 Find It!（さがせ！）</div>
+    <div class="fi-target" id="fi-target"></div>
+    <div class="findit-grid" id="findGrid"></div>
+    <div class="feedback" id="fi-fb" style="text-align:center;"></div>
+    <div style="text-align:center;margin-top:8px;">
+      <span style="color:var(--caramel-dark);font-size:0.9rem;">Found: <span id="fi-found">0</span></span>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 15: Build Your Trip -->
+<div class="slide" id="slide-14">
+  <div class="card">
+    <div class="slide-title">🎫 Build Your Trip!</div>
+    <div class="slide-sub">じぶんのきっぷをつくろう！</div>
+    <div class="cup-display" id="cupDisplay">🎫 Your trip: ___</div>
+    <div id="orderSteps"></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
+      <button class="check-btn" onclick="submitOrder()">✅ Go!</button>
+      <button class="check-btn" style="background:var(--caramel);" onclick="resetOrder()">🔄 Start Over</button>
+    </div>
+    <div class="feedback" id="order-fb" style="text-align:center;"></div>
+  </div>
+</div>
+
+<!-- SLIDE 16: Which Train? -->
+<div class="slide" id="slide-15">
+  <div class="card">
+    <div class="slide-title">🚄 Which Train?（どの電車？）</div>
+    <div class="slide-sub">もんだいをよんで電車をえらぼう！</div>
+    <div id="sizeQuestion" class="typing-hint" style="font-size:1.05rem;text-align:center;min-height:48px;"></div>
+    <div class="size-cards" id="sizeCards"></div>
+    <div class="feedback" id="size-fb" style="text-align:center;margin-top:12px;"></div>
+    <div style="text-align:center;margin-top:10px;">
+      <span style="color:var(--caramel-dark);font-size:0.9rem;">問題 <span id="sz-num">1</span> / 5</span>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 17: Station Detective -->
+<div class="slide" id="slide-16">
+  <div class="card">
+    <div class="slide-title">🔎 Station Detective!</div>
+    <div class="slide-sub">かくれた🚃をぜんぶさがそう！</div>
+    <p style="text-align:center;color:var(--caramel-dark);margin-bottom:12px;">
+      🚃 が <strong id="mikke-remain">5</strong> このこっているよ！
+    </p>
+    <div class="mikke-grid" id="mikkeGrid"></div>
+    <div class="feedback" id="mikke-fb" style="text-align:center;margin-top:12px;"></div>
+  </div>
+</div>
+
+<!-- SLIDE 18: Quiz -->
+<div class="slide" id="slide-17">
+  <div class="card">
+    <div class="slide-title">📝 Quiz Time!</div>
+    <div style="color:var(--caramel-dark);font-size:0.9rem;margin-bottom:8px;" id="quiz-progress">Question 1 / 10</div>
+    <div class="quiz-q" id="quiz-q"></div>
+    <div class="quiz-choices" id="quiz-choices"></div>
+    <div class="feedback" id="quiz-fb" style="margin-top:12px;text-align:center;"></div>
+    <div style="text-align:center;margin-top:10px;">
+      <span style="color:var(--roast);font-weight:700;">Score: <span id="quiz-score-disp">0</span> / 10</span>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 19: Review -->
+<div class="slide" id="slide-18">
+  <div class="card">
+    <div class="slide-title">📚 Review All Words!</div>
+    <div class="slide-sub">きょうおぼえたことば　ぜんぶ！</div>
+    <div class="review-grid" id="reviewGrid"></div>
+  </div>
+</div>
+
+<!-- SLIDE 20: Summary -->
+<div class="slide" id="slide-19">
+  <div class="card" style="text-align:center;">
+    <div style="font-size:3rem;">🎉</div>
+    <div class="slide-title">Great Job! よくできました！</div>
+    <div style="font-size:1.4rem;color:var(--roast);font-weight:700;margin:10px 0;font-family:var(--font-display);">
+      Total Score: <span id="final-score">0</span> ⭐
+    </div>
+    <div class="summary-badges" id="summaryBadges"></div>
+    <p style="margin-top:18px;color:var(--caramel-dark);">🚃 Now you can ride the train in English! すごい！</p>
+    <button class="check-btn" style="margin-top:16px;" onclick="restartAll()">🔄 Play Again!</button>
+  </div>
+</div>
+
+</div><!-- /slides -->
+
+<button class="side-arrow" id="sideArrowPrev" onclick="navigate(-1)" disabled title="Back">◀</button>
+<button class="side-arrow" id="sideArrowNext" onclick="navigate(1)" title="Next">▶</button>
+
+<div id="navBar">
+  <button class="nav-btn" id="prevBtn" onclick="navigate(-1)" disabled>◀ Back</button>
+  <div id="dotContainer"></div>
+  <button class="nav-btn" id="nextBtn" onclick="navigate(1)">Next ▶</button>
+</div>
+
+<script>
+// ============================================================
+// データ
+// ============================================================
+const VOCAB = [
+  {en:"train",         jp:"でんしゃ",           emoji:"🚃", set:1},
+  {en:"bus",           jp:"バス",               emoji:"🚌", set:1},
+  {en:"taxi",          jp:"タクシー",           emoji:"🚕", set:1},
+  {en:"subway",        jp:"ちかてつ",           emoji:"🚇", set:1},
+  {en:"bullet train",  jp:"しんかんせん",        emoji:"🚄", set:1},
+  {en:"bicycle",       jp:"じてんしゃ",         emoji:"🚲", set:1},
+  {en:"car",           jp:"くるま",             emoji:"🚗", set:1},
+  {en:"airplane",      jp:"ひこうき",           emoji:"✈️", set:1},
+  {en:"fast",          jp:"はやい",             emoji:"🚄", set:2},
+  {en:"slow",          jp:"おそい",             emoji:"🐢", set:2},
+  {en:"early",         jp:"はやく（じかん）",    emoji:"⏰", set:2},
+  {en:"late",          jp:"おそく（じかん）",    emoji:"⌚", set:2},
+  {en:"on time",       jp:"じこくどおり",       emoji:"✅", set:2},
+  {en:"first",         jp:"さいしょ",           emoji:"1️⃣", set:2},
+  {en:"next",          jp:"つぎ",               emoji:"➡️", set:2},
+  {en:"last",          jp:"さいご",             emoji:"🏁", set:2},
+  {en:"station",       jp:"えき",               emoji:"🚉", set:3},
+  {en:"ticket",        jp:"きっぷ",             emoji:"🎫", set:3},
+  {en:"ticket gate",   jp:"かいさつぐち",       emoji:"🚪", set:3},
+  {en:"platform",      jp:"ホーム",             emoji:"🛤️", set:3},
+  {en:"timetable",     jp:"じこくひょう",       emoji:"📅", set:3},
+  {en:"conductor",     jp:"しゃしょう",         emoji:"👨‍✈️", set:3},
+  {en:"ticket machine",jp:"けんばいき",         emoji:"🎟️", set:3},
+  {en:"exit",          jp:"でぐち",             emoji:"🚶", set:3},
+];
+
+const LISTEN_DATA = [
+  {en:"The train is coming.",     jp:"電車が来ます。"},
+  {en:"Let's go to the platform.",jp:"ホームに行こう。"},
+  {en:"Which platform?",          jp:"何番ホーム？"},
+  {en:"One ticket, please.",      jp:"きっぷを一枚ください。"},
+  {en:"The train is late.",       jp:"電車がおくれています。"},
+  {en:"Next stop is Kyoto.",      jp:"次は京都です。"},
+  {en:"This is the exit.",        jp:"これが出口です。"},
+  {en:"Thank you very much!",     jp:"ありがとうございました！"},
+];
+
+const PHRASE_DATA = [
+  {en:"Where is the station?",         jp:"駅はどこですか？"},
+  {en:"Which train goes to Osaka?",    jp:"大阪行きはどれですか？"},
+  {en:"How much is it?",               jp:"いくらですか？"},
+  {en:"What time does it leave?",      jp:"何時に出発しますか？"},
+  {en:"Is this seat free?",            jp:"この席は空いていますか？"},
+  {en:"Excuse me, is this the right platform?", jp:"すみません、ここで合っていますか？"},
+  {en:"I want a window seat.",         jp:"まどがわのせきがいいです。"},
+  {en:"Have a nice trip!",             jp:"よい旅を！"},
+];
+
+const TYPING_DATA = [
+  {word:"train",  hint:"でんしゃ 🚃 (t-r-a-i-n)",   first:"t"},
+  {word:"fast",   hint:"はやい 🚄 (f-a-s-t)",       first:"f"},
+  {word:"slow",   hint:"おそい 🐢 (s-l-o-w)",       first:"s"},
+  {word:"ticket", hint:"きっぷ 🎫 (t-i-c-k-e-t)",   first:"t"},
+  {word:"station",hint:"えき 🚉 (s-t-a-t-i-o-n)",   first:"s"},
+  {word:"exit",   hint:"でぐち 🚶 (e-x-i-t)",       first:"e"},
+  {word:"next",   hint:"つぎ ➡️ (n-e-x-t)",         first:"n"},
+  {word:"last",   hint:"さいご 🏁 (l-a-s-t)",       first:"l"},
+];
+
+const WSORT_DATA = [
+  {word:"train",  hint:"でんしゃ 🚃"},
+  {word:"fast",   hint:"はやい 🚄"},
+  {word:"ticket", hint:"きっぷ 🎫"},
+  {word:"exit",   hint:"でぐち 🚶"},
+  {word:"next",   hint:"つぎ ➡️"},
+  {word:"late",   hint:"おそく（じかん） ⌚"},
+];
+
+const MATCH_DATA = [
+  {emoji:"🚃",  en:"train"},
+  {emoji:"🎫",  en:"ticket"},
+  {emoji:"🚉",  en:"station"},
+  {emoji:"🛤️", en:"platform"},
+  {emoji:"🚶",  en:"exit"},
+  {emoji:"🚄",  en:"fast"},
+  {emoji:"🐢",  en:"slow"},
+  {emoji:"➡️",  en:"next"},
+];
+
+const RP_A = [
+  {who:"A", avatar:"👨‍✈️", en:"Hello! Where do you want to go?", jp:"こんにちは！どこに行きたいですか？"},
+  {who:"B", avatar:"🧒",   en:"I want to go to Osaka.",          jp:"大阪に行きたいです。"},
+  {who:"A", avatar:"👨‍✈️", en:"One ticket?",                    jp:"きっぷは一枚ですか？"},
+  {who:"B", avatar:"🧒",   en:"Yes, one ticket, please.",        jp:"はい、一枚おねがいします。"},
+  {who:"A", avatar:"👨‍✈️", en:"That is 500 yen.",                jp:"500円です。"},
+  {who:"B", avatar:"🧒",   en:"Here you are.",                   jp:"はい、どうぞ。"},
+];
+
+const RP_B = [
+  {who:"A", avatar:"🧒",   en:"Which platform is it?",        jp:"何番ホームですか？"},
+  {who:"B", avatar:"👨‍✈️", en:"It's platform 3.",              jp:"3番ホームです。"},
+  {who:"A", avatar:"🧒",   en:"Thank you! Is this seat free?",jp:"ありがとう！この席は空いていますか？"},
+  {who:"B", avatar:"👨‍✈️", en:"Yes, it's free.",               jp:"はい、空いています。"},
+  {who:"A", avatar:"🧒",   en:"Great, thank you!",             jp:"よかった、ありがとう！"},
+  {who:"B", avatar:"👨‍✈️", en:"Have a nice trip!",             jp:"よい旅を！"},
+];
+
+const WAI_DATA = [
+  {clues:["I am long and have many seats.","I run on rails.","I am faster than a bus!"],
+   answer:"train",      choices:["train","bus","bicycle","car"]},
+  {clues:["You need me to ride the train.","I am made of paper.","You buy me at the station!"],
+   answer:"ticket",     choices:["ticket","timetable","seat","exit"]},
+  {clues:["I am where you wait for the train.","I am long and flat.","The train stops next to me!"],
+   answer:"platform",   choices:["platform","station","exit","gate"]},
+  {clues:["I check tickets on the train.","I wear a uniform.","I help passengers!"],
+   answer:"conductor",  choices:["conductor","driver","teacher","barista"]},
+  {clues:["I show train times.","I have numbers and names.","You read me before you go!"],
+   answer:"timetable",  choices:["timetable","ticket","map","menu"]},
+];
+
+const FINDIT_ROUNDS = [
+  {
+    target: "🎯 Find: train 🚃",
+    cells: [
+      {label:"train 🚃",   t:true},  {label:"bus 🚌",     t:false},
+      {label:"taxi 🚕",    t:false}, {label:"bicycle 🚲", t:false},
+      {label:"subway 🚇",  t:false}, {label:"ticket 🎫",  t:false},
+      {label:"station 🚉", t:false}, {label:"platform 🛤️",t:false},
+      {label:"exit 🚶",    t:false}, {label:"fast 🚄",    t:false},
+      {label:"slow 🐢",    t:false}, {label:"car 🚗",     t:false},
+    ],
+    needCount: 1
+  },
+  {
+    target: "🎯 Find: ticket 🎫 と station 🚉",
+    cells: [
+      {label:"ticket 🎫",  t:true},  {label:"bus 🚌",     t:false},
+      {label:"platform 🛤️",t:false}, {label:"station 🚉", t:true},
+      {label:"subway 🚇",  t:false}, {label:"taxi 🚕",    t:false},
+      {label:"exit 🚶",    t:false}, {label:"train 🚃",   t:false},
+      {label:"fast 🚄",    t:false}, {label:"slow 🐢",    t:false},
+      {label:"next ➡️",    t:false}, {label:"car 🚗",     t:false},
+    ],
+    needCount: 2
+  },
+  {
+    target: "🎯 Find: fast 🚄, slow 🐢, next ➡️",
+    cells: [
+      {label:"fast 🚄",    t:true},  {label:"ticket 🎫",  t:false},
+      {label:"station 🚉", t:false}, {label:"slow 🐢",    t:true},
+      {label:"subway 🚇",  t:false}, {label:"next ➡️",    t:true},
+      {label:"taxi 🚕",    t:false}, {label:"train 🚃",   t:false},
+      {label:"last 🏁",    t:false}, {label:"exit 🚶",    t:false},
+      {label:"platform 🛤️",t:false}, {label:"bus 🚌",     t:false},
+    ],
+    needCount: 3
+  },
+];
+
+const ORDER_STEPS = [
+  {label:"① Where to?",   jp:"どこへ行く？",     key:"drink",
+   options:[{text:"Osaka 🏯", say:"Osaka"},{text:"Tokyo 🗼",say:"Tokyo"},
+            {text:"Kyoto ⛩️",say:"Kyoto"},{text:"Nagoya 🏰",say:"Nagoya"}]},
+  {label:"② Seat?",       jp:"せきをえらぼう",   key:"size",
+   options:[{text:"window seat 🪟",say:"window seat"},{text:"aisle seat 💺",say:"aisle seat"},{text:"standing 🧍",say:"standing"}]},
+  {label:"③ Ticket type?",jp:"きっぷのしゅるい", key:"temp",
+   options:[{text:"one-way 🎫",say:"one-way"},{text:"round-trip 🔁",say:"round-trip"}]},
+  {label:"④ Extra?",      jp:"プラスは？",       key:"extra",
+   options:[{text:"reserved seat 🔖",say:"reserved seat"},{text:"none ❌",say:"none"}]},
+];
+
+const SIZE_QS = [
+  {q:"The slowest train is…",              jp:"いちばんおそい電車は？",         ans:"local train"},
+  {q:"The fastest train is…",              jp:"いちばんはやい電車は？",         ans:"bullet train"},
+  {q:"The middle speed train is…",         jp:"まんなかのはやさの電車は？",     ans:"express train"},
+  {q:"You are in a hurry! Pick the fastest.",jp:"急いでいる！はやい電車は？",   ans:"bullet train"},
+  {q:"You have lots of time. Pick the slowest.",jp:"時間がある。おそい電車は？",ans:"local train"},
+];
+
+const SIZE_INFO = [
+  {name:"local train",   icon:"🚃", oz:"stops a lot",  desc:"Slow"},
+  {name:"express train", icon:"🚈", oz:"fewer stops",  desc:"Medium"},
+  {name:"bullet train",  icon:"🚄", oz:"nonstop speed",desc:"Fast"},
+];
+
+const QUIZ_DATA = [
+  {q:"What does 'fast' mean?",                 ans:"はやい",         wrong:["おそい","ちいさい","たかい"]},
+  {q:"What does 'ticket' mean?",               ans:"きっぷ",         wrong:["せき","えき","かいさつぐち"]},
+  {q:"Which one runs on rails?",               ans:"train",          wrong:["bus","taxi","bicycle"]},
+  {q:"What do you use to enter the platform?", ans:"ticket gate",    wrong:["exit","timetable","seat"]},
+  {q:"What does 'station' mean?",              ans:"えき",           wrong:["きっぷ","ホーム","でぐち"]},
+  {q:"What is 'platform'?",                    ans:"ホーム",         wrong:["えき","きっぷ","じこくひょう"]},
+  {q:"Which train is the fastest?",            ans:"bullet train",   wrong:["local train","bus","express train"]},
+  {q:"What does 'conductor' mean?",            ans:"しゃしょう",     wrong:["うんてんしゅ","せんせい","バリスタ"]},
+  {q:"What does 'next' mean?",                 ans:"つぎ",           wrong:["さいご","はやい","おそい"]},
+  {q:"What does 'exit' mean?",                 ans:"でぐち",         wrong:["いりぐち","かいさつぐち","ホーム"]},
+];
+
+const BADGE_DEFS = [
+  {id:"badge0",emoji:"⌨️",name:"Typing Star"},
+  {id:"badge1",emoji:"🔀",name:"Sort Master"},
+  {id:"badge2",emoji:"🃏",name:"Match Master"},
+  {id:"badge3",emoji:"🤔",name:"Who Am I?"},
+  {id:"badge4",emoji:"🔍",name:"Find It! Star"},
+  {id:"badge5",emoji:"🎫",name:"Trip Master"},
+  {id:"badge6",emoji:"🚄",name:"Speed Expert"},
+  {id:"badge7",emoji:"🔎",name:"Station Detective"},
+  {id:"badge8",emoji:"📝",name:"Quiz Master"},
+];
+
+// ============================================================
+// 音声（標準・変更禁止）
+// ============================================================
+let _selectedVoice = null;
+let _lastSpokenText = "";
+let _slowMode = false;
+
+function initVoice() {
+  const tryPick = () => {
+    const voices = speechSynthesis.getVoices();
+    if (!voices.length) return;
+    const preferred = ["Google US English","Google UK English Female","Samantha","Karen","Moira","Tessa"];
+    for (const name of preferred) {
+      const v = voices.find(v => v.name === name);
+      if (v) { _selectedVoice = v; return; }
+    }
+    const f = voices.find(v => v.lang.startsWith("en") && v.name.toLowerCase().includes("female"));
+    if (f) { _selectedVoice = f; return; }
+    const e = voices.find(v => v.lang.startsWith("en"));
+    if (e) { _selectedVoice = e; return; }
+    _selectedVoice = voices[0];
+  };
+  tryPick();
+  speechSynthesis.onvoiceschanged = tryPick;
+}
+initVoice();
+
+function speak(text, btn = null) {
+  if (/[\u3000-\u9FFF]/.test(text)) return;
+  if (text === _lastSpokenText) { _slowMode = !_slowMode; }
+  else { _slowMode = false; }
+  _lastSpokenText = text;
+  const rate = _slowMode ? 0.52 : 0.82;
+  if (btn) {
+    const orig = btn.textContent;
+    btn.textContent = _slowMode ? "🐢" : "🔊";
+    btn.dataset.slow = _slowMode ? "1" : "0";
+    setTimeout(() => { btn.textContent = orig; }, 600);
+  }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  if (_selectedVoice) u.voice = _selectedVoice;
+  u.lang = "en-US"; u.rate = rate; u.pitch = 1.1; u.volume = 1.0;
+  speechSynthesis.speak(u);
+}
+
+function speakEN(text) {
+  if (!text || /[\u3000-\u9FFF]/.test(text)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  if (_selectedVoice) u.voice = _selectedVoice;
+  u.lang = "en-US"; u.rate = 0.82; u.pitch = 1.1; u.volume = 1.0;
+  speechSynthesis.speak(u);
+}
+
+// ============================================================
+// ナビゲーション
+// ============================================================
+const TOTAL_SLIDES = 20;
+let currentSlide = 0;
+let score = 0;
+
+function buildDots() {
+  const c = document.getElementById('dotContainer');
+  c.innerHTML = '';
+  for (let i = 0; i < TOTAL_SLIDES; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.onclick = () => goTo(i);
+    c.appendChild(d);
+  }
+}
+
+function goTo(n) {
+  document.querySelectorAll('.slide')[currentSlide].classList.remove('active');
+  document.querySelectorAll('.dot')[currentSlide].classList.remove('active');
+  currentSlide = Math.max(0, Math.min(n, TOTAL_SLIDES - 1));
+  document.querySelectorAll('.slide')[currentSlide].classList.add('active');
+  document.querySelectorAll('.dot')[currentSlide].classList.add('active');
+  document.getElementById('slides').scrollTop = 0;
+  document.getElementById('prevBtn').disabled = currentSlide === 0;
+  document.getElementById('nextBtn').disabled = currentSlide === TOTAL_SLIDES - 1;
+  document.getElementById('sideArrowPrev').disabled = currentSlide === 0;
+  document.getElementById('sideArrowNext').disabled = currentSlide === TOTAL_SLIDES - 1;
+  if (currentSlide === 19) updateSummary();
+}
+function navigate(dir) { goTo(currentSlide + dir); }
+
+function addScore(n) {
+  score += n;
+  document.getElementById('scoreDisplay').textContent = '⭐ ' + score;
+}
+function earnBadge(i) {
+  const s = document.getElementById('badge' + i);
+  if (s && !s.classList.contains('earned')) {
+    s.classList.add('earned'); confetti(50); addScore(20);
+  }
+}
+function confetti(count = 30) {
+  const cols = ['#F2B705','#C8102E','#1E3A5F','#D9731F','#2B7A8C','#5C6B82'];
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'confetti-piece';
+    p.style.cssText = `left:${Math.random()*100}vw;top:0;
+      background:${cols[Math.floor(Math.random()*cols.length)]};
+      animation-delay:${Math.random()*0.8}s;animation-duration:${1.5+Math.random()}s;`;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 3000);
+  }
+}
+
+// ============================================================
+// 語彙グリッド
+// ============================================================
+function buildVocab() {
+  [1,2,3].forEach(set => {
+    const g = document.getElementById('vocab'+set);
+    if (!g) return;
+    VOCAB.filter(v=>v.set===set).forEach(v => {
+      const c = document.createElement('div');
+      c.className = 'vocab-card';
+      c.innerHTML = `<div style="font-size:1.8rem;">${v.emoji}</div>
+        <div class="vocab-en">${v.en}</div>
+        <div class="vocab-jp">${v.jp}</div>
+        <button class="speak-btn" onclick="speak('${v.en}',this)">🔊</button>`;
+      g.appendChild(c);
+    });
+  });
+}
+
+// ============================================================
+// リスニング / フレーズ
+// ============================================================
+function buildListen() {
+  const ul = document.getElementById('listenList');
+  if (!ul) return;
+  LISTEN_DATA.forEach(item => {
+    const li = document.createElement('li');
+    li.className = 'listen-item';
+    li.innerHTML = `<button class="speak-btn" onclick="speak('${item.en}',this)">🔊</button>
+      <div><div class="listen-en">${item.en}</div><div class="listen-jp">${item.jp}</div></div>`;
+    ul.appendChild(li);
+  });
+}
+function buildPhrases() {
+  const ul = document.getElementById('phraseList');
+  if (!ul) return;
+  PHRASE_DATA.forEach(item => {
+    const li = document.createElement('li');
+    li.className = 'listen-item';
+    li.style.borderLeftColor = 'var(--caramel)';
+    li.innerHTML = `<button class="speak-btn" onclick="speak('${item.en}',this)">🔊</button>
+      <div><div class="listen-en">${item.en}</div><div class="listen-jp">${item.jp}</div></div>`;
+    ul.appendChild(li);
+  });
+}
+
+// ============================================================
+// タイピング
+// ============================================================
+let tqIdx = 0, tqScore = 0;
+let tqData = [];
+function buildTyping() {
+  tqData = [...TYPING_DATA].sort(()=>Math.random()-0.5);
+  tqIdx = 0; tqScore = 0;
+  document.getElementById('tq-total').textContent = tqData.length;
+  showTypingQ();
+}
+function showTypingQ() {
+  const area = document.getElementById('typingArea');
+  if (!area) return;
+  if (tqIdx >= tqData.length) {
+    area.innerHTML = `<div style="text-align:center;font-size:1.3rem;color:var(--roast);font-family:var(--font-display);">🎉 Finished! Score: ${tqScore}/${tqData.length}</div>`;
+    if (tqScore >= tqData.length - 1) earnBadge(0);
+    return;
+  }
+  const q = tqData[tqIdx];
+  document.getElementById('tq-num').textContent = tqIdx + 1;
+  area.innerHTML = `
+    <div class="typing-hint">💡 ヒント: ${q.hint}</div>
+    <div style="margin-bottom:10px;">
+      <button class="speak-btn" onclick="speak('${q.word}',this)" style="width:auto;font-size:0.9rem;padding:6px 16px;">🔊 Listen</button>
+    </div>
+    <input class="typing-input" id="tInput" type="text" placeholder="Type here..."
+           autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+    <br>
+    <button class="check-btn" onclick="checkTyping()">✅ Check!</button>
+    <div class="feedback" id="t-fb"></div>`;
+  setTimeout(() => {
+    const inp = document.getElementById('tInput');
+    if (inp) { inp.focus(); inp.addEventListener('keydown', e=>{ if(e.key==='Enter') checkTyping(); }); }
+  }, 100);
+}
+function checkTyping() {
+  const inp = document.getElementById('tInput');
+  const fb  = document.getElementById('t-fb');
+  if (!inp||!fb) return;
+  const val = inp.value.trim().toLowerCase();
+  const q   = tqData[tqIdx];
+  if (val === q.word) {
+    fb.style.color = 'var(--roast)'; fb.textContent = '✅ Correct! Great job!';
+    tqScore++; addScore(10); confetti(20); tqIdx++;
+    setTimeout(showTypingQ, 1000);
+  } else {
+    fb.style.color = 'var(--cherry)';
+    fb.textContent = `❌ Try again! (starts with "${q.first}")`;
+    inp.value=''; inp.focus();
+  }
+}
+
+// ============================================================
+// ワードソート
+// ============================================================
+let wsIdx=0, wsScore=0, wsPlaced=[];
+let wsData=[];
+function buildWSort() {
+  wsData = [...WSORT_DATA].sort(()=>Math.random()-0.5);
+  wsIdx=0; wsScore=0;
+  document.getElementById('ws-total').textContent = wsData.length;
+  showWSort();
+}
+function showWSort() {
+  if (wsIdx >= wsData.length) {
+    document.getElementById('wsort-hint').textContent = '🎉 All done!';
+    document.getElementById('wsort-tiles').innerHTML = '';
+    document.getElementById('wsort-answer').innerHTML =
+      `<span style="color:var(--roast);font-size:1.15rem;font-family:var(--font-display);">Score: ${wsScore}/${wsData.length} 🌟</span>`;
+    if (wsScore >= wsData.length - 1) earnBadge(1);
+    return;
+  }
+  const q = wsData[wsIdx];
+  document.getElementById('ws-num').textContent = wsIdx+1;
+  document.getElementById('wsort-hint').textContent = '💡 ヒント: ' + q.hint;
+  document.getElementById('wsort-answer').innerHTML = '';
+  document.getElementById('wsort-fb').textContent = '';
+  wsPlaced = [];
+  const letters = q.word.split('').sort(()=>Math.random()-0.5);
+  const td = document.getElementById('wsort-tiles');
+  td.innerHTML = '';
+  letters.forEach((ch,i) => {
+    const btn = document.createElement('button');
+    btn.className = 'tile'; btn.textContent = ch; btn.dataset.idx = i;
+    btn.onclick = function(){ placeTile(this, ch); };
+    td.appendChild(btn);
+  });
+}
+function placeTile(btn, ch) {
+  if (btn.classList.contains('placed')) return;
+  btn.classList.add('placed');
+  wsPlaced.push(ch);
+  const ans = document.getElementById('wsort-answer');
+  const sp = document.createElement('span');
+  sp.className = 'tile placed'; sp.textContent = ch; sp.style.cursor='default';
+  ans.appendChild(sp);
+}
+function checkWSort() {
+  const q = wsData[wsIdx];
+  const fb = document.getElementById('wsort-fb');
+  if (wsPlaced.join('') === q.word) {
+    fb.style.color='var(--roast)'; fb.textContent='✅ Correct!';
+    wsScore++; addScore(10); confetti(20); wsIdx++;
+    speakEN(q.word);
+    setTimeout(showWSort, 1000);
+  } else {
+    fb.style.color='var(--cherry)'; fb.textContent='❌ Try again!';
+  }
+}
+function resetWSort() { wsPlaced=[]; showWSort(); }
+
+// ============================================================
+// 神経衰弱
+// ============================================================
+let matchFlipped=[], matchMatched=0, isChecking=false;
+
+function initMatch() {
+  matchFlipped=[]; matchMatched=0; isChecking=false;
+  document.getElementById('match-pairs').textContent='0';
+  const grid = document.getElementById('matchGrid');
+  grid.innerHTML='';
+
+  const cards = [];
+  MATCH_DATA.forEach(p => {
+    cards.push({display: p.emoji, pairKey: p.en, type:'emoji', sayText: p.en});
+    cards.push({display: p.en,    pairKey: p.en, type:'word',  sayText: p.en});
+  });
+  cards.sort(()=>Math.random()-0.5);
+
+  cards.forEach(c => {
+    const wrap = document.createElement('div');
+    wrap.className = 'mcard-wrap';
+    wrap.dataset.pairKey = c.pairKey;
+    wrap.dataset.sayText = c.sayText;
+    wrap.onclick = function(){ flipCard(this); };
+    const backStyle = c.type==='emoji' ? 'font-size:2rem;' : 'font-size:0.85rem;font-weight:900;';
+    wrap.innerHTML = `
+      <div class="mcard">
+        <div class="mcard-front">🚃</div>
+        <div class="mcard-back" style="${backStyle}">${c.display}</div>
+      </div>`;
+    grid.appendChild(wrap);
+  });
+}
+
+function flipCard(wrap) {
+  const card = wrap.querySelector('.mcard');
+  if (card.classList.contains('flipped') || card.classList.contains('matched') || isChecking) return;
+  card.classList.add('flipped');
+  speakEN(wrap.dataset.sayText);
+  matchFlipped.push(wrap);
+  if (matchFlipped.length === 2) {
+    isChecking = true;
+    setTimeout(checkMatch, 900);
+  }
+}
+
+function checkMatch() {
+  const [a, b] = matchFlipped;
+  const ac = a.querySelector('.mcard');
+  const bc = b.querySelector('.mcard');
+  if (a.dataset.pairKey === b.dataset.pairKey && a !== b) {
+    ac.classList.add('matched'); bc.classList.add('matched');
+    matchMatched++;
+    document.getElementById('match-pairs').textContent = matchMatched;
+    addScore(15);
+    speakEN(a.dataset.sayText);
+    if (matchMatched === 8) { confetti(60); earnBadge(2); }
+  } else {
+    setTimeout(() => {
+      ac.classList.remove('flipped');
+      bc.classList.remove('flipped');
+    }, 400);
+  }
+  matchFlipped=[]; isChecking=false;
+}
+
+// ============================================================
+// ロールプレイ
+// ============================================================
+function buildRP() {
+  ['rpA','rpB'].forEach((id, idx) => {
+    const container = document.getElementById(id);
+    if (!container) return;
+    const data = idx === 0 ? RP_A : RP_B;
+    data.forEach(r => {
+      const isB = r.who === 'B';
+      const row = document.createElement('div');
+      row.className = 'rp-row ' + (isB ? 'row-b' : 'row-a');
+      const safeText = r.en.replace(/'/g, "\\'");
+      row.innerHTML = `
+        <div class="rp-avatar">${r.avatar}</div>
+        <div class="rp-bubble-wrap">
+          <div class="rp-speech">
+            <div class="rp-en">${r.en}</div>
+            <div class="rp-jp">${r.jp}</div>
+          </div>
+          <div class="rp-speak-wrap">
+            <button class="speak-btn" onclick="speak('${safeText}', this)">🔊</button>
+          </div>
+        </div>`;
+      container.appendChild(row);
+    });
+  });
+}
+
+// ============================================================
+// Who Am I?
+// ============================================================
+let waiIdx=0, waiScore=0;
+let waiData=[];
+function buildWAI() {
+  waiData=[...WAI_DATA].sort(()=>Math.random()-0.5);
+  waiIdx=0; waiScore=0;
+  showWAI();
+}
+function showWAI() {
+  const area=document.getElementById('waiArea');
+  if(!area) return;
+  if(waiIdx>=waiData.length){
+    area.innerHTML=`<div style="text-align:center;font-size:1.25rem;color:var(--roast);font-family:var(--font-display);">🎉 All done! Score: ${waiScore}/${waiData.length}</div>`;
+    if(waiScore>=waiData.length-1) earnBadge(3);
+    return;
+  }
+  const q=waiData[waiIdx];
+  document.getElementById('wai-num').textContent=waiIdx+1;
+  const choices=[...q.choices].sort(()=>Math.random()-0.5);
+  area.innerHTML=`
+    <div style="background:var(--caramel-wash);border:1px solid var(--caramel);border-radius:var(--radius-sm);padding:22px;margin-bottom:18px;font-size:1.15rem;">
+      ${q.clues.map((c,i)=>`<p style="margin-bottom:10px;">💡 Hint ${i+1}: ${c}</p>`).join('')}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      ${choices.map(ch=>`<button class="choice-btn" onclick="checkWAI('${ch}','${q.answer}',this)">${ch}</button>`).join('')}
+    </div>
+    <div class="feedback" id="wai-fb" style="text-align:center;margin-top:14px;font-size:1.15rem;"></div>`;
+}
+function checkWAI(choice, answer, btn) {
+  document.querySelectorAll('#waiArea .choice-btn').forEach(b=>b.disabled=true);
+  const fb=document.getElementById('wai-fb');
+  if(choice===answer){
+    btn.classList.add('correct');
+    fb.style.color='var(--roast)'; fb.textContent='✅ Correct!';
+    waiScore++; addScore(10); confetti(20); speakEN(answer);
+  } else {
+    btn.classList.add('wrong');
+    document.querySelectorAll('#waiArea .choice-btn').forEach(b=>{ if(b.textContent===answer) b.classList.add('correct'); });
+    fb.style.color='var(--cherry)'; fb.textContent=`❌ Answer: "${answer}"`;
+  }
+  waiIdx++;
+  setTimeout(showWAI, 1200);
+}
+
+// ============================================================
+// Find It!
+// ============================================================
+let fiRound=0, fiFound=0;
+function buildFindIt() { fiRound=0; showFI(); }
+function showFI() {
+  if(fiRound>=FINDIT_ROUNDS.length){
+    document.getElementById('fi-target').innerHTML='🎉 All rounds done!';
+    document.getElementById('findGrid').innerHTML='';
+    earnBadge(4); return;
+  }
+  const round=FINDIT_ROUNDS[fiRound];
+  fiFound=0;
+  document.getElementById('fi-found').textContent='0';
+  document.getElementById('fi-fb').textContent='';
+  document.getElementById('fi-target').innerHTML=round.target;
+  const grid=document.getElementById('findGrid');
+  grid.innerHTML='';
+  const shuffled=[...round.cells].sort(()=>Math.random()-0.5);
+  shuffled.forEach(cell=>{
+    const div=document.createElement('div');
+    div.className='fi-item';
+    div.innerHTML=cell.label;
+    div.dataset.isTarget=cell.t?'1':'0';
+    div.onclick=function(){ tapFI(this, round.needCount); };
+    grid.appendChild(div);
+  });
+}
+function tapFI(el, needCount) {
+  if(el.classList.contains('found')) return;
+  if(el.dataset.isTarget==='1'){
+    el.classList.add('found');
+    fiFound++;
+    document.getElementById('fi-found').textContent=fiFound;
+    addScore(8); confetti(15);
+    const word=el.innerHTML.replace(/[^\x00-\x7F]/g,'').trim();
+    if(word) speakEN(word);
+    if(fiFound>=needCount){
+      document.getElementById('fi-fb').style.color='var(--roast)';
+      document.getElementById('fi-fb').textContent='🎉 Round clear!';
+      fiRound++;
+      setTimeout(showFI,1300);
+    }
+  } else {
+    el.classList.add('wrong-tap');
+    setTimeout(()=>el.classList.remove('wrong-tap'),500);
+  }
+}
+
+// ============================================================
+// Build Your Trip
+// ============================================================
+let orderSelection={};
+function buildOrder() {
+  const container=document.getElementById('orderSteps');
+  if(!container) return;
+  ORDER_STEPS.forEach(step=>{
+    const div=document.createElement('div');
+    div.style.marginBottom='12px';
+    div.innerHTML=`<p style="font-weight:700;color:var(--roast);margin-bottom:6px;font-family:var(--font-display);">
+      ${step.label} <span style="color:var(--espresso-soft);font-size:0.85rem;font-family:var(--font-body);">${step.jp}</span></p>
+      <div class="order-options" id="opt-${step.key}"></div>`;
+    container.appendChild(div);
+    const optDiv=div.querySelector(`#opt-${step.key}`);
+    step.options.forEach(opt=>{
+      const btn=document.createElement('button');
+      btn.className='order-opt';
+      btn.textContent=opt.text;
+      btn.dataset.key=step.key;
+      btn.dataset.say=opt.say;
+      btn.onclick=function(){ selectOrder(this); };
+      optDiv.appendChild(btn);
+    });
+  });
+}
+function selectOrder(btn) {
+  const key=btn.dataset.key;
+  document.querySelectorAll(`.order-opt[data-key="${key}"]`).forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  orderSelection[key]=btn.dataset.say;
+  speakEN(btn.dataset.say);
+  updateCupDisplay();
+}
+function updateCupDisplay() {
+  const d=orderSelection;
+  const parts=[d.drink||'___',d.size||'___',d.temp||'___'];
+  if(d.extra && d.extra!=='none') parts.push('+ '+d.extra);
+  document.getElementById('cupDisplay').textContent='🎫 '+parts.join(' · ');
+}
+function submitOrder() {
+  const fb=document.getElementById('order-fb');
+  const missing=ORDER_STEPS.map(s=>s.key).filter(k=>!orderSelection[k]);
+  if(missing.length>0){ fb.style.color='var(--cherry)'; fb.textContent='❌ まだえらんでいないものがあるよ！'; return; }
+  fb.style.color='var(--roast)'; fb.textContent='✅ Perfect trip! Great job!';
+  confetti(40); earnBadge(5); addScore(20);
+  const sentence=`${orderSelection.temp} ticket to ${orderSelection.drink}`;
+  speakEN(sentence);
+}
+function resetOrder() {
+  orderSelection={};
+  document.querySelectorAll('.order-opt').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('cupDisplay').textContent='🎫 Your trip: ___';
+  document.getElementById('order-fb').textContent='';
+}
+
+// ============================================================
+// Which Train? (Speed game)
+// ============================================================
+let szIdx=0, szScore=0;
+let szData=[];
+
+function buildSizeGame() {
+  szData=[...SIZE_QS].sort(()=>Math.random()-0.5);
+  szIdx=0; szScore=0;
+
+  const cardsDiv=document.getElementById('sizeCards');
+  cardsDiv.innerHTML='';
+  SIZE_INFO.forEach(s=>{
+    const div=document.createElement('div');
+    div.className='size-card';
+    div.dataset.sizeName=s.name;
+    div.innerHTML=`
+      <div style="font-size:2.1rem;margin-bottom:6px;">${s.icon}</div>
+      <div style="font-size:1rem;font-weight:700;color:var(--roast);font-family:var(--font-display);">${s.name}</div>
+      <div style="font-size:0.78rem;color:var(--espresso-soft);">${s.oz} · ${s.desc}</div>`;
+    div.onclick=function(){ checkSize(this); };
+    cardsDiv.appendChild(div);
+  });
+
+  showSizeQ();
+}
+
+function showSizeQ() {
+  const fb=document.getElementById('size-fb');
+  const qDiv=document.getElementById('sizeQuestion');
+  if(!qDiv) return;
+
+  if(szIdx>=szData.length){
+    qDiv.textContent=`🎉 All done! Score: ${szScore}/${szData.length}`;
+    if(szScore>=szData.length-1) earnBadge(6);
+    document.querySelectorAll('.size-card').forEach(c=>c.style.pointerEvents='none');
+    return;
+  }
+  const q=szData[szIdx];
+  document.getElementById('sz-num').textContent=szIdx+1;
+  qDiv.innerHTML=`${q.q}<br><span style="font-size:0.85rem;color:var(--espresso-soft);">${q.jp}</span>`;
+  document.querySelectorAll('.size-card').forEach(c=>{
+    c.classList.remove('correct-pick','wrong-pick');
+    c.style.pointerEvents='';
+  });
+  if(fb) fb.textContent='';
+}
+
+function checkSize(card) {
+  const name=card.dataset.sizeName;
+  const q=szData[szIdx];
+  document.querySelectorAll('.size-card').forEach(c=>c.style.pointerEvents='none');
+  const fb=document.getElementById('size-fb');
+
+  if(name===q.ans){
+    card.classList.add('correct-pick');
+    fb.style.color='var(--roast)'; fb.textContent='✅ Correct!';
+    szScore++; addScore(10); confetti(20); speakEN(name);
+  } else {
+    card.classList.add('wrong-pick');
+    document.querySelectorAll('.size-card').forEach(c=>{
+      if(c.dataset.sizeName===q.ans) c.classList.add('correct-pick');
+    });
+    fb.style.color='var(--cherry)'; fb.textContent=`❌ The answer is "${q.ans}"!`;
+  }
+  szIdx++;
+  setTimeout(showSizeQ, 1200);
+}
+
+// ============================================================
+// Station Detective
+// ============================================================
+const MIKKE_TOTAL=5;
+let mikkeFound=0;
+
+function buildMikke() {
+  mikkeFound=0;
+  const fb=document.getElementById('mikke-fb');
+  if(fb) fb.textContent='';
+  const remain=document.getElementById('mikke-remain');
+  if(remain) remain.textContent=MIKKE_TOTAL;
+
+  const grid=document.getElementById('mikkeGrid');
+  if(!grid) return;
+  grid.innerHTML='';
+
+  const decoys=["🚌","🚕","🚲","🚗","✈️","🚇","🎫","🚉","🛤️","🚶","⏰","➡️","🏁","👨‍✈️","📅"];
+  const all=[];
+  for(let i=0;i<MIKKE_TOTAL;i++) all.push({em:"🚃", hidden:true});
+  decoys.forEach(em=>all.push({em, hidden:false}));
+  all.sort(()=>Math.random()-0.5);
+
+  all.forEach(item=>{
+    const div=document.createElement('div');
+    div.className='mikke-cell';
+    div.textContent=item.em;
+    div.dataset.hidden=item.hidden?'1':'0';
+    div.onclick=function(){ tapMikke(this); };
+    grid.appendChild(div);
+  });
+}
+
+function tapMikke(el) {
+  if(el.classList.contains('found-m')) return;
+  if(el.dataset.hidden==='1'){
+    el.classList.add('found-m');
+    mikkeFound++;
+    addScore(8); confetti(15); speakEN('train');
+    const remain=document.getElementById('mikke-remain');
+    if(remain) remain.textContent=MIKKE_TOTAL-mikkeFound;
+    if(mikkeFound>=MIKKE_TOTAL){
+      const fb=document.getElementById('mikke-fb');
+      fb.style.color='var(--roast)'; fb.textContent='🎉 All found!';
+      earnBadge(7);
+    }
+  } else {
+    el.classList.add('mikke-cell','wrong-m');
+    el.style.background='var(--cherry-wash)';
+    setTimeout(()=>{ el.style.background=''; el.classList.remove('wrong-m'); },400);
+  }
+}
+
+// ============================================================
+// Quiz
+// ============================================================
+let quizIdx=0, quizScore=0;
+let quizData=[];
+
+function buildQuiz() {
+  quizData=[...QUIZ_DATA].sort(()=>Math.random()-0.5);
+  quizIdx=0; quizScore=0;
+  document.getElementById('quiz-score-disp').textContent='0';
+  showQuiz();
+}
+
+function showQuiz() {
+  const qDiv=document.getElementById('quiz-q');
+  const choicesDiv=document.getElementById('quiz-choices');
+  const fb=document.getElementById('quiz-fb');
+  const prog=document.getElementById('quiz-progress');
+  if(!qDiv||!choicesDiv) return;
+
+  if(quizIdx>=quizData.length){
+    qDiv.textContent='🎉 Quiz done!';
+    choicesDiv.innerHTML='';
+    fb.style.color='var(--roast)';
+    fb.textContent=`Final Score: ${quizScore}/${quizData.length}`;
+    if(quizScore>=8) earnBadge(8);
+    return;
+  }
+
+  const q=quizData[quizIdx];
+  prog.textContent=`Question ${quizIdx+1} / ${quizData.length}`;
+  qDiv.textContent=q.q;
+  document.getElementById('quiz-score-disp').textContent=quizScore;
+  if(fb) fb.textContent='';
+
+  const choices=[q.ans,...q.wrong].sort(()=>Math.random()-0.5);
+  choicesDiv.innerHTML='';
+  choices.forEach(ch=>{
+    const btn=document.createElement('button');
+    btn.className='choice-btn';
+    btn.textContent=ch;
+    btn.onclick=function(){ checkQuiz(ch, q.ans, this); };
+    choicesDiv.appendChild(btn);
+  });
+}
+
+function checkQuiz(choice, answer, btn) {
+  document.querySelectorAll('#quiz-choices .choice-btn').forEach(b=>b.disabled=true);
+  const fb=document.getElementById('quiz-fb');
+  if(choice===answer){
+    btn.classList.add('correct');
+    fb.style.color='var(--roast)'; fb.textContent='✅ Correct!';
+    quizScore++; addScore(10); confetti(15);
+    if(!/[\u3000-\u9FFF]/.test(answer)) speakEN(answer);
+  } else {
+    btn.classList.add('wrong');
+    document.querySelectorAll('#quiz-choices .choice-btn').forEach(b=>{
+      if(b.textContent===answer) b.classList.add('correct');
+    });
+    fb.style.color='var(--cherry)'; fb.textContent=`❌ Answer: "${answer}"`;
+  }
+  document.getElementById('quiz-score-disp').textContent=quizScore;
+  quizIdx++;
+  setTimeout(showQuiz, 1200);
+}
+
+// ============================================================
+// レビュー
+// ============================================================
+function buildReview() {
+  const grid=document.getElementById('reviewGrid');
+  if(!grid) return;
+  VOCAB.forEach(v=>{
+    const div=document.createElement('div');
+    div.className='review-card';
+    div.innerHTML=`<div style="font-size:1.5rem;">${v.emoji}</div>
+      <div style="font-size:1rem;font-weight:700;color:var(--roast);font-family:var(--font-display);">${v.en}</div>
+      <div style="font-size:0.8rem;color:var(--espresso-soft);margin-top:3px;">${v.jp}</div>
+      <button class="speak-btn" onclick="speak('${v.en}',this)" style="margin-top:6px;">🔊</button>`;
+    grid.appendChild(div);
+  });
+}
+
+// ============================================================
+// サマリー
+// ============================================================
+function updateSummary() {
+  document.getElementById('final-score').textContent=score;
+  const sb=document.getElementById('summaryBadges');
+  sb.innerHTML='';
+  BADGE_DEFS.forEach(b=>{
+    const slot=document.getElementById(b.id);
+    const earned=slot&&slot.classList.contains('earned');
+    const div=document.createElement('div');
+    div.className='sum-badge'+(earned?' earned':'');
+    div.innerHTML=`<div style="font-size:1.5rem;">${b.emoji}</div>
+      <div style="font-size:0.8rem;margin-top:4px;color:${earned?'var(--roast)':'var(--espresso-soft)'};font-family:var(--font-display);">${b.name}</div>`;
+    sb.appendChild(div);
+  });
+}
+
+// ============================================================
+// リスタート
+// ============================================================
+function restartAll() {
+  score=0;
+  document.getElementById('scoreDisplay').textContent='⭐ 0';
+  document.querySelectorAll('.badge-slot').forEach(b=>b.classList.remove('earned'));
+  buildTyping(); buildWSort(); initMatch();
+  buildWAI(); buildFindIt(); resetOrder();
+  buildSizeGame(); buildMikke(); buildQuiz();
+  goTo(0);
+}
+
+// ============================================================
+// アンビエント（線路の砂利・光）
+// ============================================================
+(function(){
+  const canvas=document.getElementById('starCanvas');
+  const ctx=canvas.getContext('2d');
+  let bubbles=[];
+  function resize(){ canvas.width=window.innerWidth; canvas.height=window.innerHeight; }
+  function initBubbles(){
+    bubbles=Array.from({length:22},()=>({
+      x:Math.random()*canvas.width,
+      y:canvas.height+Math.random()*200,
+      r:Math.random()*10+4,
+      speed:Math.random()*0.25+0.08,
+      a:Math.random()*0.08+0.04,
+      drift:(Math.random()-0.5)*0.3
+    }));
+  }
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    bubbles.forEach(b=>{
+      b.y-=b.speed; b.x+=b.drift;
+      if(b.y<-20){ b.y=canvas.height+20; b.x=Math.random()*canvas.width; }
+      ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(242,183,5,${b.a})`; ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  resize(); initBubbles(); draw();
+  window.addEventListener('resize',()=>{ resize(); initBubbles(); });
+})();
+
+// ============================================================
+// キーボード
+// ============================================================
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight') navigate(1);
+  if(e.key==='ArrowLeft')  navigate(-1);
+});
+
+// ============================================================
+// 初期化
+// ============================================================
+document.addEventListener('DOMContentLoaded', ()=>{
+  buildDots();
+  buildVocab();
+  buildListen();
+  buildPhrases();
+  buildTyping();
+  buildWSort();
+  initMatch();
+  buildRP();
+  buildWAI();
+  buildFindIt();
+  buildOrder();
+  buildSizeGame();
+  buildMikke();
+  buildQuiz();
+  buildReview();
+});
+</script>
+</body>
+</html>
