@@ -1,0 +1,2345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>English Lesson</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+/*THEME_VARS_START*/
+--cream:#F5F0E8;            /* ページ全体の背景（明るい色） */
+  --card:#FFFFFF;             /* カード背景（白系） */
+  --card-edge:#E0D5C0;        /* カードの枠線 */
+  --espresso:#2D1F0F;         /* 文字色・下のナビバー（濃い色） */
+  --espresso-soft:#6B5942;    /* 補足文字（中間の濃さ） */
+  --roast:#4A6D3A;            /* メインカラー（上バー・見出し） */
+  --roast-light:#6B944F;      /* メインカラーの明るい版 */
+  --roast-wash:rgba(74,109,58,0.08);   /* メインカラーの薄い背景 */
+  --caramel:#C84E00;          /* アクセント（ボタン） */
+  --caramel-dark:#8F3700;     /* アクセントの濃い版 */
+  --caramel-wash:rgba(200,78,0,0.11); /* アクセントの薄い背景 */
+  --cherry:#B8341A;           /* 不正解・注意の色 */
+  --cherry-wash:rgba(184,52,26,0.11);
+  --gold:#D4A017;             /* スコア・強調 */
+  --sky:#4F7D8C;              /* ヒント・情報の色 */
+  --sky-wash:rgba(79,125,140,0.1);
+/*THEME_VARS_END*/
+  --radius-lg:22px;
+  --radius-md:16px;
+  --radius-sm:11px;
+  --shadow:0 10px 26px rgba(20,32,50,0.16);
+  --shadow-sm:0 4px 12px rgba(20,32,50,0.12);
+  --font-display:'Baloo 2',sans-serif;
+  --font-body:'Zen Maru Gothic',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:132%;}
+body{
+  font-family:var(--font-body);
+  background:var(--cream);
+  color:var(--espresso);
+  overflow:hidden;height:100vh;
+  background-image:
+    radial-gradient(ellipse 70% 50% at 15% 8%, var(--caramel-wash), transparent),
+    radial-gradient(ellipse 60% 45% at 90% 95%, var(--roast-wash), transparent);
+}
+#starCanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;}
+
+/* ===== TOP BAR ===== */
+#topBar{position:fixed;top:0;left:0;right:0;height:66px;background:var(--roast);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 22px;z-index:100;box-shadow:0 2px 0 var(--caramel);}
+#topBar h1{font-family:var(--font-display);font-size:1.3rem;font-weight:700;color:var(--cream);letter-spacing:0.2px;}
+#scoreDisplay{font-family:var(--font-display);font-size:1.2rem;font-weight:700;color:var(--espresso);
+  background:var(--gold);padding:7px 18px;border-radius:999px;box-shadow:var(--shadow-sm);}
+
+/* ===== STAMP CARD (badges) ===== */
+#badgeBar{position:fixed;top:66px;left:0;right:0;height:54px;background:var(--card);
+  display:flex;align-items:center;padding:0 18px;gap:12px;z-index:99;overflow-x:auto;
+  border-bottom:1px dashed var(--card-edge);}
+.badge-slot{
+  width:42px;height:42px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:1.15rem;
+  border:2px dashed var(--espresso-soft);opacity:0.45;
+  transition:all 0.35s cubic-bezier(.34,1.6,.64,1);cursor:default;background:transparent;
+}
+.badge-slot.earned{
+  opacity:1;border:2px solid var(--roast);background:var(--roast-wash);
+  transform:rotate(-8deg) scale(1.12);
+  box-shadow:inset 0 0 0 2px var(--card);
+}
+
+/* ===== SLIDES ===== */
+#slides{position:fixed;top:120px;bottom:104px;left:0;right:0;overflow-y:auto;z-index:10;
+  padding:22px clamp(90px, 6vw, 150px) 40px;}
+.slide{display:none;max-width:1900px;width:100%;margin:0 auto;animation:fadeIn 0.45s ease;}
+.slide.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+@media(max-width:900px){#slides{padding:18px 20px 40px;}}
+
+/* ===== NAV BAR ===== */
+#navBar{position:fixed;bottom:12px;left:12px;right:12px;height:80px;background:var(--espresso);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;z-index:100;border-radius:24px;box-shadow:0 8px 22px rgba(0,0,0,0.35);}
+.nav-btn{background:var(--caramel);color:var(--cream);border:none;border-radius:999px;padding:16px 34px;
+  font-size:1.25rem;font-weight:700;cursor:pointer;transition:transform 0.18s,box-shadow 0.18s;
+  font-family:var(--font-display);box-shadow:var(--shadow-sm);min-width:120px;}
+.nav-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,0.28);}
+.nav-btn:disabled{opacity:0.3;cursor:default;transform:none;box-shadow:none;}
+#dotContainer{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;max-width:40%;}
+.dot{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,0.22);cursor:pointer;
+  transition:background 0.3s,transform 0.3s;}
+.dot.active{background:var(--gold);transform:scale(1.6);}
+
+/* ===== SIDE ARROW BUTTONS (Zoom等の画面共有でも押しやすい大きな矢印) ===== */
+.side-arrow{position:fixed;top:50%;transform:translateY(-50%);z-index:110;
+  width:64px;height:64px;border-radius:50%;background:var(--caramel);color:var(--cream);
+  border:3px solid var(--cream);font-size:1.8rem;font-family:var(--font-display);font-weight:700;
+  cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;
+  transition:transform 0.18s,box-shadow 0.18s,opacity 0.18s;}
+.side-arrow:hover:not(:disabled){transform:translateY(-50%) scale(1.1);box-shadow:0 8px 22px rgba(0,0,0,0.45);}
+.side-arrow:disabled{opacity:0.25;cursor:default;transform:translateY(-50%);}
+#sideArrowPrev{left:14px;}
+#sideArrowNext{right:14px;}
+@media(max-width:760px){.side-arrow{width:50px;height:50px;font-size:1.4rem;}}
+
+/* ===== CARD ===== */
+.card{background:var(--card);border-radius:var(--radius-lg);padding:36px 44px;
+  margin-bottom:16px;border:1px solid var(--card-edge);box-shadow:var(--shadow);}
+.slide-title{font-family:var(--font-display);font-size:1.9rem;font-weight:700;color:var(--roast);
+  margin-bottom:8px;text-align:center;}
+.slide-sub{font-size:1.05rem;color:var(--espresso-soft);text-align:center;margin-bottom:20px;}
+
+/* ===== VOCAB GRID ===== */
+.vocab-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:18px;margin-top:16px;}
+.vocab-card{background:var(--card);border-radius:var(--radius-md);padding:20px 14px 16px;text-align:center;
+  border:2px dashed var(--card-edge);transition:transform 0.2s,border-color 0.2s;position:relative;}
+.vocab-card:nth-child(3n+1){transform:rotate(-1.1deg);}
+.vocab-card:nth-child(3n+2){transform:rotate(0.8deg);}
+.vocab-card:nth-child(3n){transform:rotate(-0.4deg);}
+.vocab-card:hover{transform:translateY(-4px) rotate(0deg);border-color:var(--caramel);}
+.vocab-en{font-family:var(--font-display);font-size:1.25rem;font-weight:700;color:var(--roast);}
+.vocab-jp{font-size:0.95rem;color:var(--espresso-soft);margin:5px 0 10px;}
+.speak-btn{background:var(--caramel);border:none;border-radius:999px;width:46px;height:46px;
+  cursor:pointer;transition:all 0.2s;color:var(--cream);font-size:1.2rem;font-family:var(--font-body);
+  box-shadow:var(--shadow-sm);}
+.speak-btn:hover{transform:scale(1.14);background:var(--caramel-dark);}
+button[data-slow="1"]{background:var(--cherry)!important;transform:scale(1.18);}
+
+/* ===== LISTEN LIST ===== */
+.listen-list{list-style:none;display:flex;flex-direction:column;gap:14px;}
+.listen-item{background:var(--card);border-radius:var(--radius-sm);padding:18px 22px;
+  display:flex;align-items:center;gap:16px;border-left:4px solid var(--roast);box-shadow:var(--shadow-sm);}
+.listen-en{font-weight:700;font-size:1.25rem;flex:1;font-family:var(--font-display);color:var(--espresso);}
+.listen-jp{font-size:0.95rem;color:var(--espresso-soft);}
+
+/* ===== TYPING ===== */
+.typing-hint{background:var(--sky-wash);border:1px solid var(--sky);border-radius:var(--radius-sm);
+  padding:14px 20px;margin-bottom:14px;color:var(--sky);font-size:1.15rem;}
+.typing-input{background:var(--card);border:2px solid var(--gold);border-radius:var(--radius-sm);
+  padding:14px 20px;color:var(--espresso);font-size:1.3rem;font-family:var(--font-body);
+  width:100%;max-width:420px;}
+.typing-input:focus{outline:none;border-color:var(--roast);}
+.check-btn{background:var(--roast);color:var(--cream);border:none;border-radius:var(--radius-sm);padding:15px 32px;
+  font-size:1.15rem;font-weight:700;cursor:pointer;margin-top:14px;font-family:var(--font-display);
+  transition:transform 0.18s;box-shadow:var(--shadow-sm);}
+.check-btn:hover{transform:translateY(-2px);}
+.feedback{font-size:1.2rem;font-weight:700;margin-top:14px;min-height:30px;font-family:var(--font-display);}
+
+/* ===== WORD SORT ===== */
+.wsort-area{display:flex;flex-wrap:wrap;gap:12px;min-height:66px;background:var(--roast-wash);
+  border-radius:var(--radius-sm);padding:14px;margin-bottom:16px;border:2px dashed var(--roast-light);}
+.wsort-tiles{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px;}
+.tile{background:var(--caramel);color:var(--cream);border:none;border-radius:var(--radius-sm);padding:14px 22px;
+  font-size:1.3rem;font-weight:700;cursor:pointer;font-family:var(--font-display);
+  transition:transform 0.15s,background 0.2s;box-shadow:var(--shadow-sm);}
+.tile:hover{transform:scale(1.08);background:var(--cherry);}
+.tile.placed{background:var(--roast);}
+
+/* ===== MEMORY MATCH ===== */
+.match-grid{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-top:20px;}
+.mcard-wrap{width:130px;height:130px;perspective:600px;cursor:pointer;}
+.mcard{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform 0.5s ease;}
+.mcard.flipped{transform:rotateY(180deg);}
+.mcard-front,.mcard-back{position:absolute;inset:0;border-radius:var(--radius-sm);backface-visibility:hidden;
+  display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-sm);}
+.mcard-front{background:var(--caramel);font-size:2.6rem;}
+.mcard-back{background:var(--gold);color:var(--espresso);transform:rotateY(180deg);
+  font-size:1.05rem;font-weight:900;text-align:center;padding:6px;line-height:1.3;font-family:var(--font-display);}
+.mcard.matched .mcard-back{background:var(--roast);color:var(--cream);}
+.mcard.matched .mcard-front{background:var(--roast);}
+
+/* ===== ROLE PLAY ===== */
+.rp-container{display:flex;flex-direction:column;gap:18px;padding:4px 0;}
+.rp-row{display:flex;align-items:flex-end;gap:14px;}
+.rp-row.row-b{flex-direction:row-reverse;}
+.rp-avatar{width:72px;height:72px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:2.3rem;flex-shrink:0;border:2px solid;background:var(--card);}
+.rp-row.row-a .rp-avatar{border-color:var(--roast);}
+.rp-row.row-b .rp-avatar{border-color:var(--caramel);}
+.rp-bubble-wrap{max-width:72%;display:flex;flex-direction:column;gap:6px;}
+.rp-row.row-b .rp-bubble-wrap{align-items:flex-end;}
+.rp-speech{padding:16px 20px;border-radius:20px;}
+.rp-row.row-a .rp-speech{background:var(--roast-wash);border:1.5px solid var(--roast);border-bottom-left-radius:4px;}
+.rp-row.row-b .rp-speech{background:var(--caramel-wash);border:1.5px solid var(--caramel);border-bottom-right-radius:4px;}
+.rp-en{font-size:1.25rem;font-weight:700;color:var(--espresso);font-family:var(--font-display);}
+.rp-jp{font-size:0.98rem;color:var(--espresso-soft);margin-top:4px;}
+.rp-speak-wrap{display:flex;margin-top:6px;}
+.rp-row.row-b .rp-speak-wrap{justify-content:flex-end;}
+
+/* ===== FIND IT ===== */
+.findit-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:16px;}
+.fi-item{background:var(--card);border-radius:var(--radius-sm);padding:22px 12px;text-align:center;
+  font-size:1.5rem;cursor:pointer;border:2px solid var(--card-edge);transition:all 0.2s;
+  line-height:1.3;word-break:break-word;box-shadow:var(--shadow-sm);}
+.fi-item:hover{border-color:var(--gold);transform:scale(1.06);}
+.fi-item.found{border-color:var(--roast);background:var(--roast-wash);pointer-events:none;}
+.fi-item.wrong-tap{border-color:var(--cherry);animation:shake 0.3s;}
+.fi-target{background:var(--caramel-wash);border:2px dashed var(--caramel);border-radius:var(--radius-sm);
+  padding:18px;text-align:center;font-size:1.2rem;margin-bottom:18px;font-family:var(--font-display);color:var(--caramel-dark);}
+@keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-6px);}75%{transform:translateX(6px);}}
+
+/* ===== TRIP BUILDER ===== */
+.order-options{display:flex;flex-wrap:wrap;gap:14px;margin:12px 0;}
+.order-opt{background:var(--card);border:2px solid var(--card-edge);
+  border-radius:var(--radius-sm);padding:16px 24px;cursor:pointer;font-size:1.15rem;font-weight:700;
+  transition:all 0.2s;font-family:var(--font-body);color:var(--espresso);}
+.order-opt:hover{background:var(--roast-wash);border-color:var(--roast);}
+.order-opt.selected{background:var(--roast);border-color:var(--roast);color:var(--cream);}
+.cup-display{background:var(--roast-wash);border:2px solid var(--roast);border-radius:var(--radius-md);
+  padding:22px;text-align:center;font-size:1.4rem;min-height:74px;margin-bottom:16px;font-family:var(--font-display);color:var(--roast);}
+
+/* ===== SPEED GAME ===== */
+.size-cards{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin-top:18px;}
+.size-card{background:var(--card);border-radius:var(--radius-md);padding:26px;text-align:center;
+  cursor:pointer;border:2px solid var(--card-edge);transition:all 0.25s;min-width:140px;box-shadow:var(--shadow-sm);}
+.size-card:hover{border-color:var(--gold);transform:translateY(-4px);}
+.size-card.correct-pick{border-color:var(--roast);background:var(--roast-wash);}
+.size-card.wrong-pick{border-color:var(--cherry);background:var(--cherry-wash);}
+
+/* ===== DETECTIVE ===== */
+.mikke-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:18px;}
+.mikke-cell{background:var(--card);border-radius:var(--radius-sm);height:100px;
+  display:flex;align-items:center;justify-content:center;font-size:2.4rem;cursor:pointer;
+  border:2px solid var(--card-edge);transition:all 0.2s;user-select:none;}
+.mikke-cell:hover{border-color:var(--sky);transform:scale(1.08);}
+.mikke-cell.found-m{border-color:var(--roast);background:var(--roast-wash);pointer-events:none;}
+.mikke-cell.wrong-m{animation:shake 0.3s;}
+
+/* ===== QUIZ ===== */
+.quiz-q{font-size:1.4rem;font-weight:700;margin-bottom:18px;line-height:1.5;font-family:var(--font-display);color:var(--espresso);}
+.quiz-choices{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.choice-btn{background:var(--card);border:2px solid var(--card-edge);
+  border-radius:var(--radius-sm);padding:22px;color:var(--espresso);font-size:1.2rem;font-weight:700;cursor:pointer;
+  transition:all 0.2s;font-family:var(--font-body);}
+.choice-btn:hover{background:var(--roast-wash);border-color:var(--roast);}
+.choice-btn.correct{background:var(--roast)!important;border-color:var(--roast);color:var(--cream)!important;}
+.choice-btn.wrong{background:var(--cherry)!important;border-color:var(--cherry);color:var(--cream)!important;}
+.choice-btn:disabled{cursor:default;}
+
+/* ===== REVIEW ===== */
+.review-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin-top:16px;}
+.review-card{background:var(--roast-wash);border-radius:var(--radius-sm);padding:18px 12px;text-align:center;
+  border:1px solid var(--roast-light);font-size:1.1rem;}
+
+/* ===== SUMMARY ===== */
+.summary-badges{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-top:20px;}
+.sum-badge{background:var(--card);border-radius:var(--radius-md);padding:18px 26px;
+  font-size:1.4rem;text-align:center;border:1px solid var(--card-edge);}
+.sum-badge.earned{background:var(--roast-wash);border-color:var(--roast);}
+
+/* CONFETTI */
+.confetti-piece{position:fixed;width:9px;height:9px;border-radius:2px;
+  animation:confettiFall 2s ease-out forwards;z-index:9999;pointer-events:none;}
+@keyframes confettiFall{0%{transform:translateY(-20px) rotate(0deg);opacity:1;}
+  100%{transform:translateY(100vh) rotate(720deg);opacity:0;}}
+
+/* ===== SPOT THE WORDS ===== */
+.spot-line{margin:0 0 14px;line-height:2.1;font-size:1.3rem;}
+.spot-word{display:inline-block;padding:1px 8px;border-radius:9px;cursor:pointer;transition:background 0.2s;}
+.spot-word:hover{background:var(--roast-wash);}
+.spot-word.found{background:var(--roast);color:var(--cream);font-weight:700;pointer-events:none;}
+.spot-word.wrong-tap{background:var(--cherry-wash);animation:shake 0.3s;}
+.check-btn:disabled{opacity:0.35;cursor:default;transform:none;}
+
+/* ===== MEMORY MODE ===== */
+.mode-btn{background:var(--card);color:var(--roast);border:2px solid var(--roast);border-radius:999px;
+  padding:8px 20px;font-size:0.95rem;font-weight:700;cursor:pointer;font-family:var(--font-body);}
+.mode-btn.active{background:var(--roast);color:var(--cream);}
+.match-grid.jp{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.match-grid.jp .mcard-wrap{width:100%;height:96px;}
+@media(max-width:600px){.match-grid.jp{grid-template-columns:repeat(2,1fr);}}
+
+/* RESPONSIVE */
+@media(max-width:600px){
+  .vocab-grid{grid-template-columns:repeat(2,1fr);}
+  .quiz-choices{grid-template-columns:1fr;}
+  .mcard-wrap{width:84px;height:84px;}
+  .findit-grid{grid-template-columns:repeat(3,1fr);}
+  .mikke-grid{grid-template-columns:repeat(4,1fr);}
+  .size-cards{gap:8px;}
+}
+</style>
+</head>
+<body>
+<canvas id="starCanvas"></canvas>
+
+<div id="topBar">
+  <h1 id="topTitle"></h1>
+  <div id="scoreDisplay">⭐ 0</div>
+</div>
+
+<div id="badgeBar">
+  <span class="badge-slot" id="badge0" title="Typing Star">⌨️</span>
+  <span class="badge-slot" id="badge1" title="Sort Master">🔀</span>
+  <span class="badge-slot" id="badge2" title="Match Master">🃏</span>
+  <span class="badge-slot" id="badge3" title="Who Am I? Master">🤔</span>
+  <span class="badge-slot" id="badge4" title="Find It! Star">🔍</span>
+  <span class="badge-slot" id="badge5" title="Trip Master">🎫</span>
+  <span class="badge-slot" id="badge6" title="Speed Expert">🚄</span>
+  <span class="badge-slot" id="badge7" title="Detective">🔎</span>
+  <span class="badge-slot" id="badge8" title="Quiz Master">📝</span>
+  <span class="badge-slot" id="badge9" title="Word Spotter">🕵️</span>
+</div>
+
+<div id="slides">
+
+<!-- 1: タイトル -->
+<div class="slide active" id="slide-0">
+  <div style="text-align:center;padding:10px 0;">
+    <img id="heroImg" alt="" style="width:100%;max-width:600px;border-radius:20px;box-shadow:var(--shadow);margin-bottom:20px;">
+    <div id="heroEmoji" style="display:none;font-size:6rem;margin-bottom:20px;"></div>
+    <h2 id="heroTitle" style="font-family:var(--font-display);font-size:2.2rem;font-weight:700;color:var(--roast);"></h2>
+    <p id="heroJp" style="font-size:1.1rem;color:var(--espresso-soft);margin-top:8px;"></p>
+    <p id="heroTopic" style="margin-top:14px;color:var(--caramel-dark);font-size:1rem;"></p>
+    <div style="margin-top:20px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <span style="background:var(--roast-wash);border:1px solid var(--roast);border-radius:20px;padding:6px 16px;font-size:0.88rem;color:var(--roast);">🎮 <span id="gameCount">10</span> Games</span>
+      <span style="background:var(--caramel-wash);border:1px solid var(--caramel);border-radius:20px;padding:6px 16px;font-size:0.88rem;color:var(--caramel-dark);">🏆 <span id="stampCount">10</span> Stamps</span>
+      <span style="background:var(--sky-wash);border:1px solid var(--sky);border-radius:20px;padding:6px 16px;font-size:0.88rem;color:var(--sky);">🔊 Tap to listen</span>
+    </div>
+  </div>
+</div>
+
+<!-- 2: イントロ -->
+<div class="slide" id="slide-1">
+  <div class="card">
+    <div class="slide-title" id="introTitle"></div>
+    <div class="slide-sub" id="introSub"></div>
+    <div id="introGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;"></div>
+    <p id="introClosing" style="margin-top:16px;text-align:center;color:var(--caramel-dark);"></p>
+  </div>
+</div>
+
+<!-- 3-5: 語彙 -->
+<div class="slide" id="slide-2"><div class="card"><div class="slide-title" id="vocabTitle1"></div><div class="vocab-grid" id="vocab1"></div></div></div>
+<div class="slide" id="slide-3"><div class="card"><div class="slide-title" id="vocabTitle2"></div><div class="vocab-grid" id="vocab2"></div></div></div>
+<div class="slide" id="slide-4"><div class="card"><div class="slide-title" id="vocabTitle3"></div><div class="vocab-grid" id="vocab3"></div></div></div>
+
+<!-- 6: リスニング -->
+<div class="slide" id="slide-5">
+  <div class="card">
+    <div class="slide-title">👂 Listen & Repeat!</div>
+    <div class="slide-sub">聞いてまねしよう！</div>
+    <ul class="listen-list" id="listenList"></ul>
+  </div>
+</div>
+
+<!-- 7: フレーズ -->
+<div class="slide" id="slide-6">
+  <div class="card">
+    <div class="slide-title">💬 Useful Phrases（つかえるフレーズ）</div>
+    <ul class="listen-list" id="phraseList"></ul>
+  </div>
+</div>
+
+<!-- 7.5: Spot the Words -->
+<div class="slide" id="slide-spot">
+  <div class="card">
+    <div class="slide-title" id="spotTitle"></div>
+    <div class="slide-sub" id="spotSub"></div>
+    <div class="typing-hint" id="spotInst"></div>
+    <div id="spotSentences"></div>
+    <div class="feedback" id="spot-fb" style="text-align:center;"></div>
+    <div style="text-align:center;margin-top:8px;">
+      <span style="color:var(--caramel-dark);font-size:0.9rem;">Found: <span id="spot-found">0</span> / <span id="spot-total">0</span></span>
+    </div>
+  </div>
+</div>
+
+<!-- 8: タイピング -->
+<div class="slide" id="slide-7">
+  <div class="card">
+    <div class="slide-title">⌨️ Typing Challenge!</div>
+    <div class="slide-sub">タイプしてみよう！</div>
+    <div id="typingArea"></div>
+    <div style="text-align:center;margin-top:14px;">
+      <span style="color:var(--caramel-dark);font-size:0.9rem;">問題 <span id="tq-num">1</span> / <span id="tq-total"></span></span>
+    </div>
+  </div>
+</div>
+
+<!-- 9: ワードソート -->
+<div class="slide" id="slide-8">
+  <div class="card">
+    <div class="slide-title">🔀 Word Sort!</div>
+    <div class="slide-sub">文字をならべかえよう！</div>
+    <div id="wsort-hint" class="typing-hint"></div>
+    <p style="font-size:0.85rem;color:var(--espresso-soft);margin-bottom:8px;">↓ ここにならべよう</p>
+    <div class="wsort-area" id="wsort-answer"></div>
+    <div class="wsort-tiles" id="wsort-tiles"></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="check-btn" onclick="checkWSort()">✅ Check!</button>
+      <button class="check-btn" style="background:var(--caramel);" onclick="resetWSort()">🔄 Reset</button>
+    </div>
+    <div class="feedback" id="wsort-fb"></div>
+    <div style="text-align:center;margin-top:10px;">
+      <span style="color:var(--caramel-dark);font-size:0.9rem;">問題 <span id="ws-num">1</span> / <span id="ws-total"></span></span>
+    </div>
+  </div>
+</div>
+
+<!-- 10: 神経衰弱 -->
+<div class="slide" id="slide-9">
+  <div class="card">
+    <div class="slide-title">🃏 Memory Match!</div>
+    <div class="slide-sub" id="matchSub"></div>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:12px;">
+      <button class="mode-btn active" id="modePic" onclick="setMatchMode('pic')">🖼️ え × えいご</button>
+      <button class="mode-btn" id="modeJp" onclick="setMatchMode('jp')">🇯🇵 日本語 × えいご</button>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <span style="color:var(--caramel-dark);">Pairs: <span id="match-pairs">0</span>/<span id="match-total"></span></span>
+      <button class="check-btn" onclick="initMatch()" style="padding:6px 16px;font-size:0.85rem;">🔄 Reset</button>
+    </div>
+    <div class="match-grid" id="matchGrid"></div>
+  </div>
+</div>
+
+<!-- 11-12: ロールプレイ -->
+<div class="slide" id="slide-10">
+  <div class="card">
+    <div class="slide-title">🎭 Role Play A!</div>
+    <div class="slide-sub" id="rpASub"></div>
+    <div class="rp-container" id="rpA"></div>
+    <p style="color:var(--espresso-soft);font-size:0.8rem;text-align:center;margin-top:12px;">🔊 をタップして聞いてみよう！</p>
+  </div>
+</div>
+<div class="slide" id="slide-11">
+  <div class="card">
+    <div class="slide-title">🎭 Role Play B!</div>
+    <div class="slide-sub" id="rpBSub"></div>
+    <div class="rp-container" id="rpB"></div>
+    <p style="color:var(--espresso-soft);font-size:0.8rem;text-align:center;margin-top:12px;">🎤 Practice with a friend!</p>
+  </div>
+</div>
+
+<!-- 13: Who Am I? -->
+<div class="slide" id="slide-12">
+  <div class="card">
+    <div class="slide-title">🤔 Who Am I?</div>
+    <div class="slide-sub">ヒントをよんであてよう！（少ないヒントほど高得点）</div>
+    <div id="waiArea"></div>
+  </div>
+</div>
+
+<!-- 14: Find It! -->
+<div class="slide" id="slide-13">
+  <div class="card">
+    <div class="slide-title">🔍 Find It!（さがせ！）</div>
+    <div class="fi-target" id="fi-target"></div>
+    <div class="findit-grid" id="findGrid"></div>
+    <div class="feedback" id="fi-fb" style="text-align:center;"></div>
+    <div style="text-align:center;margin-top:8px;">
+      <span style="color:var(--caramel-dark);font-size:0.9rem;">Found: <span id="fi-found">0</span></span>
+    </div>
+  </div>
+</div>
+
+<!-- 15: Build -->
+<div class="slide" id="slide-14">
+  <div class="card">
+    <div class="slide-title" id="tripTitle"></div>
+    <div class="slide-sub" id="tripSub"></div>
+    <div class="cup-display" id="cupDisplay"></div>
+    <div id="orderSteps"></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
+      <button class="check-btn" onclick="submitOrder()">✅ Go!</button>
+      <button class="check-btn" style="background:var(--caramel);" onclick="resetOrder()">🔄 Start Over</button>
+    </div>
+    <div class="feedback" id="order-fb" style="text-align:center;"></div>
+  </div>
+</div>
+
+<!-- 16: Which one? -->
+<div class="slide" id="slide-15">
+  <div class="card">
+    <div class="slide-title" id="sizeTitle"></div>
+    <div class="slide-sub" id="sizeSub"></div>
+    <div id="sizeQuestion" class="typing-hint" style="font-size:1.05rem;text-align:center;min-height:48px;"></div>
+    <div class="size-cards" id="sizeCards"></div>
+    <div class="feedback" id="size-fb" style="text-align:center;margin-top:12px;"></div>
+    <div style="text-align:center;margin-top:10px;">
+      <span style="color:var(--caramel-dark);font-size:0.9rem;">問題 <span id="sz-num">1</span> / <span id="sz-total"></span></span>
+    </div>
+  </div>
+</div>
+
+<!-- 17: Detective -->
+<div class="slide" id="slide-16">
+  <div class="card">
+    <div class="slide-title" id="mikkeTitle"></div>
+    <div class="slide-sub" id="mikkeSub"></div>
+    <p style="text-align:center;color:var(--caramel-dark);margin-bottom:12px;">
+      <span id="mikkeIcon"></span> が <strong id="mikke-remain">5</strong> このこっているよ！
+    </p>
+    <div class="mikke-grid" id="mikkeGrid"></div>
+    <div class="feedback" id="mikke-fb" style="text-align:center;margin-top:12px;"></div>
+  </div>
+</div>
+
+<!-- 18: Quiz -->
+<div class="slide" id="slide-17">
+  <div class="card">
+    <div class="slide-title">📝 Quiz Time!</div>
+    <div style="color:var(--caramel-dark);font-size:0.9rem;margin-bottom:8px;" id="quiz-progress"></div>
+    <div class="quiz-q" id="quiz-q"></div>
+    <div class="quiz-choices" id="quiz-choices"></div>
+    <div class="feedback" id="quiz-fb" style="margin-top:12px;text-align:center;"></div>
+    <div style="text-align:center;margin-top:10px;">
+      <span style="color:var(--roast);font-weight:700;">Score: <span id="quiz-score-disp">0</span> / <span id="quiz-total"></span></span>
+    </div>
+  </div>
+</div>
+
+<!-- 19: Review -->
+<div class="slide" id="slide-18">
+  <div class="card">
+    <div class="slide-title">📚 Review All Words!</div>
+    <div class="slide-sub">きょうおぼえたことば　ぜんぶ！</div>
+    <div class="review-grid" id="reviewGrid"></div>
+  </div>
+</div>
+
+<!-- 20: Summary -->
+<div class="slide" id="slide-19">
+  <div class="card" style="text-align:center;">
+    <div style="font-size:3rem;">🎉</div>
+    <div class="slide-title">Great Job! よくできました！</div>
+    <div style="font-size:1.4rem;color:var(--roast);font-weight:700;margin:10px 0;font-family:var(--font-display);">
+      Total Score: <span id="final-score">0</span> ⭐
+    </div>
+    <div class="summary-badges" id="summaryBadges"></div>
+    <p id="summaryClosing" style="margin-top:18px;color:var(--caramel-dark);"></p>
+    <button class="check-btn" style="margin-top:16px;" onclick="restartAll()">🔄 Play Again!</button>
+  </div>
+</div>
+
+</div><!-- /slides -->
+
+<button class="side-arrow" id="sideArrowPrev" onclick="navigate(-1)" disabled title="Back">◀</button>
+<button class="side-arrow" id="sideArrowNext" onclick="navigate(1)" title="Next">▶</button>
+
+<div id="navBar">
+  <button class="nav-btn" id="prevBtn" onclick="navigate(-1)" disabled>◀ Back</button>
+  <div id="dotContainer"></div>
+  <button class="nav-btn" id="nextBtn" onclick="navigate(1)">Next ▶</button>
+</div>
+
+<script>
+// ============================================================
+// ▼▼▼ テーマごとに変わるデータ（JSON）。自動生成はこの中身だけを書き換える ▼▼▼
+// ============================================================
+const LESSON = /*LESSON_DATA_START*/
+{
+ "META": {
+  "titleEmoji": "🦕",
+  "titleEn": "Time Travel to Dinosaurs!",
+  "titleJp": "恐竜時代にタイムスリップ！",
+  "topic": "visiting the dinosaur age",
+  "heroImg": "dinosaur,prehistoric",
+  "heroAlt": "Dinosaur world",
+  "introTitle": "🦖 What is the Dinosaur Age?",
+  "introSub": "恐竜時代ってどんなところ？",
+  "introCards": [
+   {
+    "emoji": "🥚",
+    "en": "Find Dinosaur Eggs",
+    "jp": "たまごを見つける"
+   },
+   {
+    "emoji": "🌋",
+    "en": "Watch the Volcano",
+    "jp": "火山を見る"
+   },
+   {
+    "emoji": "🦕",
+    "en": "Meet Big Dinosaurs",
+    "jp": "大きな恐竜に会う"
+   },
+   {
+    "emoji": "🌿",
+    "en": "Explore the Jungle",
+    "jp": "ジャングルを探検する"
+   }
+  ],
+  "introClosing": "Let's learn about dinosaurs in English! 🗣️",
+  "vocabTitles": [
+   "🦕 Dinosaurs（恐竜たち）",
+   "📏 Size & Speed（大きさと はやさ）",
+   "🌋 Dinosaur World（恐竜の せかい）"
+  ],
+  "rpASub": "恐竜を見つけよう！（前半）",
+  "rpBSub": "恐竜から逃げよう！（後半）",
+  "cardBack": "🦕",
+  "tripTitle": "🥚 Build Your Dino!",
+  "tripSub": "じぶんの恐竜をつくろう！",
+  "tripEmoji": "🦕",
+  "tripPlaceholder": "Your dino: ___",
+  "tripSentence": "{type} dinosaur from {dest}",
+  "sizeTitle": "🦖 Which Dinosaur?（どの恐竜？）",
+  "sizeSub": "もんだいをよんで恐竜をえらぼう！",
+  "mikkeTitle": "🔎 Dino Hunter!",
+  "mikkeSub": "かくれた🦕をぜんぶさがそう！",
+  "mikkeTarget": "🦕",
+  "mikkeSay": "dinosaur",
+  "mikkeDecoys": [
+   "🦎",
+   "🐊",
+   "🐢",
+   "🦖",
+   "🥚",
+   "🌋",
+   "🌿",
+   "🪨",
+   "🦴",
+   "🔥",
+   "🌴",
+   "☄️",
+   "🦴",
+   "🍖",
+   "🌋"
+  ],
+  "summaryClosing": "🦕 Now you can talk about dinosaurs in English! すごい！",
+  "particleColor": "74,109,58"
+ },
+ "VOCAB": [
+  {
+   "en": "dinosaur",
+   "jp": "きょうりゅう",
+   "emoji": "🦕",
+   "set": 1
+  },
+  {
+   "en": "T-rex",
+   "jp": "ティラノサウルス",
+   "emoji": "🦖",
+   "set": 1
+  },
+  {
+   "en": "lizard",
+   "jp": "トカゲ",
+   "emoji": "🦎",
+   "set": 1
+  },
+  {
+   "en": "crocodile",
+   "jp": "ワニ",
+   "emoji": "🐊",
+   "set": 1
+  },
+  {
+   "en": "turtle",
+   "jp": "カメ",
+   "emoji": "🐢",
+   "set": 1
+  },
+  {
+   "en": "pteranodon",
+   "jp": "プテラノドン",
+   "emoji": "🦅",
+   "set": 1
+  },
+  {
+   "en": "triceratops",
+   "jp": "トリケラトプス",
+   "emoji": "🦏",
+   "set": 1
+  },
+  {
+   "en": "stegosaurus",
+   "jp": "ステゴサウルス",
+   "emoji": "🦕",
+   "set": 1
+  },
+  {
+   "en": "big",
+   "jp": "大きい",
+   "emoji": "🦕",
+   "set": 2
+  },
+  {
+   "en": "small",
+   "jp": "小さい",
+   "emoji": "🦎",
+   "set": 2
+  },
+  {
+   "en": "fast",
+   "jp": "はやい",
+   "emoji": "💨",
+   "set": 2
+  },
+  {
+   "en": "slow",
+   "jp": "おそい",
+   "emoji": "🐢",
+   "set": 2
+  },
+  {
+   "en": "strong",
+   "jp": "つよい",
+   "emoji": "💪",
+   "set": 2
+  },
+  {
+   "en": "scary",
+   "jp": "こわい",
+   "emoji": "😱",
+   "set": 2
+  },
+  {
+   "en": "long",
+   "jp": "ながい",
+   "emoji": "↔️",
+   "set": 2
+  },
+  {
+   "en": "tall",
+   "jp": "たかい",
+   "emoji": "📏",
+   "set": 2
+  },
+  {
+   "en": "volcano",
+   "jp": "火山",
+   "emoji": "🌋",
+   "set": 3
+  },
+  {
+   "en": "egg",
+   "jp": "たまご",
+   "emoji": "🥚",
+   "set": 3
+  },
+  {
+   "en": "nest",
+   "jp": "す",
+   "emoji": "🪺",
+   "set": 3
+  },
+  {
+   "en": "jungle",
+   "jp": "ジャングル",
+   "emoji": "🌿",
+   "set": 3
+  },
+  {
+   "en": "fossil",
+   "jp": "化石",
+   "emoji": "🦴",
+   "set": 3
+  },
+  {
+   "en": "cave",
+   "jp": "ほら穴",
+   "emoji": "🕳️",
+   "set": 3
+  },
+  {
+   "en": "rock",
+   "jp": "いわ",
+   "emoji": "🪨",
+   "set": 3
+  },
+  {
+   "en": "footprint",
+   "jp": "足あと",
+   "emoji": "👣",
+   "set": 3
+  }
+ ],
+ "LISTEN_DATA": [
+  {
+   "en": "The dinosaur is coming.",
+   "jp": "恐竜が来ます。"
+  },
+  {
+   "en": "Let's go to the cave.",
+   "jp": "ほら穴に行こう。"
+  },
+  {
+   "en": "Which dinosaur is it?",
+   "jp": "どの恐竜？"
+  },
+  {
+   "en": "One egg, please.",
+   "jp": "たまごを一つください。"
+  },
+  {
+   "en": "The T-rex is scary.",
+   "jp": "ティラノサウルスはこわいです。"
+  },
+  {
+   "en": "Next is the volcano.",
+   "jp": "次は火山です。"
+  },
+  {
+   "en": "This is the nest.",
+   "jp": "これが巣です。"
+  },
+  {
+   "en": "Thank you very much!",
+   "jp": "ありがとうございました！"
+  }
+ ],
+ "PHRASE_DATA": [
+  {
+   "en": "Where is the dinosaur?",
+   "jp": "恐竜はどこですか？"
+  },
+  {
+   "en": "Which one is the T-rex?",
+   "jp": "どれがティラノサウルスですか？"
+  },
+  {
+   "en": "How big is it?",
+   "jp": "どのくらい大きいですか？"
+  },
+  {
+   "en": "What time does it eat?",
+   "jp": "何時に食べますか？"
+  },
+  {
+   "en": "Is this egg safe?",
+   "jp": "このたまごは安全ですか？"
+  },
+  {
+   "en": "Excuse me, is this a fossil?",
+   "jp": "すみません、これは化石ですか？"
+  },
+  {
+   "en": "I want to see the volcano.",
+   "jp": "火山が見たいです。"
+  },
+  {
+   "en": "Have a nice trip!",
+   "jp": "よい旅を！"
+  }
+ ],
+ "SPOT_DATA": {
+  "title": "🕵️ Spot the Words!",
+  "sub": "文の中から「見る・さがす」系の言葉をさがそう！",
+  "instruction": "👇 「see / watch / find」をタップしよう！",
+  "targets": [
+   "see",
+   "watch",
+   "find"
+  ],
+  "sentences": [
+   "We see the big dinosaur.",
+   "Let's watch the volcano erupt!",
+   "I find a fossil in the cave.",
+   "Can we see the T-rex together?",
+   "You watch the eggs in the nest.",
+   "Please find the footprints here."
+  ]
+ },
+ "TYPING_DATA": [
+  {
+   "word": "dinosaur",
+   "hint": "きょうりゅう 🦕 (d-i-n-o-s-a-u-r)",
+   "first": "d"
+  },
+  {
+   "word": "big",
+   "hint": "大きい 🦕 (b-i-g)",
+   "first": "b"
+  },
+  {
+   "word": "small",
+   "hint": "小さい 🦎 (s-m-a-l-l)",
+   "first": "s"
+  },
+  {
+   "word": "egg",
+   "hint": "たまご 🥚 (e-g-g)",
+   "first": "e"
+  },
+  {
+   "word": "cave",
+   "hint": "ほら穴 🕳️ (c-a-v-e)",
+   "first": "c"
+  },
+  {
+   "word": "fossil",
+   "hint": "化石 🦴 (f-o-s-s-i-l)",
+   "first": "f"
+  },
+  {
+   "word": "long",
+   "hint": "ながい ↔️ (l-o-n-g)",
+   "first": "l"
+  },
+  {
+   "word": "tall",
+   "hint": "たかい 📏 (t-a-l-l)",
+   "first": "t"
+  }
+ ],
+ "WSORT_DATA": [
+  {
+   "word": "dinosaur",
+   "hint": "きょうりゅう 🦕"
+  },
+  {
+   "word": "big",
+   "hint": "大きい 🦕"
+  },
+  {
+   "word": "egg",
+   "hint": "たまご 🥚"
+  },
+  {
+   "word": "fossil",
+   "hint": "化石 🦴"
+  },
+  {
+   "word": "long",
+   "hint": "ながい ↔️"
+  },
+  {
+   "word": "scary",
+   "hint": "こわい 😱"
+  }
+ ],
+ "MATCH_DATA": [
+  {
+   "emoji": "🦕",
+   "en": "dinosaur"
+  },
+  {
+   "emoji": "🥚",
+   "en": "egg"
+  },
+  {
+   "emoji": "🌋",
+   "en": "volcano"
+  },
+  {
+   "emoji": "🌿",
+   "en": "jungle"
+  },
+  {
+   "emoji": "🦴",
+   "en": "fossil"
+  },
+  {
+   "emoji": "🦖",
+   "en": "T-rex"
+  },
+  {
+   "emoji": "🐢",
+   "en": "slow"
+  },
+  {
+   "emoji": "💨",
+   "en": "fast"
+  }
+ ],
+ "RP_A": [
+  {
+   "who": "A",
+   "avatar": "🧑‍🔬",
+   "en": "Hello! What do you want to see?",
+   "jp": "こんにちは！何を見たいですか？"
+  },
+  {
+   "who": "B",
+   "avatar": "🧒",
+   "en": "I want to see the T-rex.",
+   "jp": "ティラノサウルスが見たいです。"
+  },
+  {
+   "who": "A",
+   "avatar": "🧑‍🔬",
+   "en": "One person?",
+   "jp": "一人ですか？"
+  },
+  {
+   "who": "B",
+   "avatar": "🧒",
+   "en": "Yes, just me, please.",
+   "jp": "はい、一人おねがいします。"
+  },
+  {
+   "who": "A",
+   "avatar": "🧑‍🔬",
+   "en": "Be careful! It is scary.",
+   "jp": "気をつけて！こわいですよ。"
+  },
+  {
+   "who": "B",
+   "avatar": "🧒",
+   "en": "I understand.",
+   "jp": "わかりました。"
+  }
+ ],
+ "RP_B": [
+  {
+   "who": "A",
+   "avatar": "🧒",
+   "en": "Where is the dinosaur?",
+   "jp": "恐竜はどこですか？"
+  },
+  {
+   "who": "B",
+   "avatar": "🧑‍🔬",
+   "en": "It's near the volcano.",
+   "jp": "火山のそばです。"
+  },
+  {
+   "who": "A",
+   "avatar": "🧒",
+   "en": "Oh no! Is it safe here?",
+   "jp": "大変！ここは安全ですか？"
+  },
+  {
+   "who": "B",
+   "avatar": "🧑‍🔬",
+   "en": "Yes, it's safe.",
+   "jp": "はい、安全です。"
+  },
+  {
+   "who": "A",
+   "avatar": "🧒",
+   "en": "Good, thank you!",
+   "jp": "よかった、ありがとう！"
+  },
+  {
+   "who": "B",
+   "avatar": "🧑‍🔬",
+   "en": "Have a nice trip!",
+   "jp": "よい旅を！"
+  }
+ ],
+ "WAI_DATA": [
+  {
+   "clues": [
+    "I lived long ago.",
+    "I am very big.",
+    "I have sharp teeth!"
+   ],
+   "answer": "dinosaur",
+   "choices": [
+    "dinosaur",
+    "lizard",
+    "turtle",
+    "crocodile"
+   ]
+  },
+  {
+   "clues": [
+    "Baby dinosaurs come from me.",
+    "I am round.",
+    "I am in a nest!"
+   ],
+   "answer": "egg",
+   "choices": [
+    "egg",
+    "rock",
+    "fossil",
+    "cave"
+   ]
+  },
+  {
+   "clues": [
+    "I am hot and tall.",
+    "Lava comes from me.",
+    "Dinosaurs live near me!"
+   ],
+   "answer": "volcano",
+   "choices": [
+    "volcano",
+    "cave",
+    "jungle",
+    "nest"
+   ]
+  },
+  {
+   "clues": [
+    "I am a dinosaur bone.",
+    "I am very old.",
+    "You find me in rocks!"
+   ],
+   "answer": "fossil",
+   "choices": [
+    "fossil",
+    "egg",
+    "footprint",
+    "nest"
+   ]
+  },
+  {
+   "clues": [
+    "I am the biggest meat eater.",
+    "I have tiny arms.",
+    "I am very scary!"
+   ],
+   "answer": "T-rex",
+   "choices": [
+    "T-rex",
+    "triceratops",
+    "stegosaurus",
+    "pteranodon"
+   ]
+  }
+ ],
+ "FINDIT_ROUNDS": [
+  {
+   "target": "🎯 Find: dinosaur 🦕",
+   "needCount": 1,
+   "cells": [
+    {
+     "label": "dinosaur 🦕",
+     "t": true
+    },
+    {
+     "label": "lizard 🦎",
+     "t": false
+    },
+    {
+     "label": "crocodile 🐊",
+     "t": false
+    },
+    {
+     "label": "turtle 🐢",
+     "t": false
+    },
+    {
+     "label": "T-rex 🦖",
+     "t": false
+    },
+    {
+     "label": "egg 🥚",
+     "t": false
+    },
+    {
+     "label": "volcano 🌋",
+     "t": false
+    },
+    {
+     "label": "jungle 🌿",
+     "t": false
+    },
+    {
+     "label": "fossil 🦴",
+     "t": false
+    },
+    {
+     "label": "big 🦕",
+     "t": false
+    },
+    {
+     "label": "small 🦎",
+     "t": false
+    },
+    {
+     "label": "cave 🕳️",
+     "t": false
+    }
+   ]
+  },
+  {
+   "target": "🎯 Find: egg 🥚 と volcano 🌋",
+   "needCount": 2,
+   "cells": [
+    {
+     "label": "egg 🥚",
+     "t": true
+    },
+    {
+     "label": "lizard 🦎",
+     "t": false
+    },
+    {
+     "label": "jungle 🌿",
+     "t": false
+    },
+    {
+     "label": "volcano 🌋",
+     "t": true
+    },
+    {
+     "label": "T-rex 🦖",
+     "t": false
+    },
+    {
+     "label": "crocodile 🐊",
+     "t": false
+    },
+    {
+     "label": "fossil 🦴",
+     "t": false
+    },
+    {
+     "label": "dinosaur 🦕",
+     "t": false
+    },
+    {
+     "label": "big 🦕",
+     "t": false
+    },
+    {
+     "label": "small 🦎",
+     "t": false
+    },
+    {
+     "label": "long ↔️",
+     "t": false
+    },
+    {
+     "label": "cave 🕳️",
+     "t": false
+    }
+   ]
+  },
+  {
+   "target": "🎯 Find: big 🦕, small 🦎, long ↔️",
+   "needCount": 3,
+   "cells": [
+    {
+     "label": "big 🦕",
+     "t": true
+    },
+    {
+     "label": "egg 🥚",
+     "t": false
+    },
+    {
+     "label": "volcano 🌋",
+     "t": false
+    },
+    {
+     "label": "small 🦎",
+     "t": true
+    },
+    {
+     "label": "T-rex 🦖",
+     "t": false
+    },
+    {
+     "label": "long ↔️",
+     "t": true
+    },
+    {
+     "label": "crocodile 🐊",
+     "t": false
+    },
+    {
+     "label": "dinosaur 🦕",
+     "t": false
+    },
+    {
+     "label": "tall 📏",
+     "t": false
+    },
+    {
+     "label": "fossil 🦴",
+     "t": false
+    },
+    {
+     "label": "jungle 🌿",
+     "t": false
+    },
+    {
+     "label": "lizard 🦎",
+     "t": false
+    }
+   ]
+  }
+ ],
+ "ORDER_STEPS": [
+  {
+   "label": "① Where from?",
+   "jp": "どこ出身？",
+   "key": "dest",
+   "options": [
+    {
+     "text": "Jurassic 🌿",
+     "say": "Jurassic"
+    },
+    {
+     "text": "Triassic 🌋",
+     "say": "Triassic"
+    },
+    {
+     "text": "Cretaceous 🦖",
+     "say": "Cretaceous"
+    },
+    {
+     "text": "Ice Age ❄️",
+     "say": "Ice Age"
+    }
+   ]
+  },
+  {
+   "label": "② Size?",
+   "jp": "大きさをえらぼう",
+   "key": "seat",
+   "options": [
+    {
+     "text": "big 🦕",
+     "say": "big"
+    },
+    {
+     "text": "small 🦎",
+     "say": "small"
+    },
+    {
+     "text": "tiny 🥚",
+     "say": "tiny"
+    }
+   ]
+  },
+  {
+   "label": "③ Type?",
+   "jp": "しゅるい",
+   "key": "type",
+   "options": [
+    {
+     "text": "meat eater 🍖",
+     "say": "meat eater"
+    },
+    {
+     "text": "plant eater 🌿",
+     "say": "plant eater"
+    }
+   ]
+  },
+  {
+   "label": "④ Special?",
+   "jp": "とくちょうは？",
+   "key": "extra",
+   "options": [
+    {
+     "text": "with horns 🦏",
+     "say": "with horns"
+    },
+    {
+     "text": "none ❌",
+     "say": "none"
+    }
+   ]
+  }
+ ],
+ "SIZE_QS": [
+  {
+   "q": "The smallest dinosaur is…",
+   "jp": "いちばん小さい恐竜は？",
+   "ans": "baby dino"
+  },
+  {
+   "q": "The biggest dinosaur is…",
+   "jp": "いちばん大きい恐竜は？",
+   "ans": "giant dino"
+  },
+  {
+   "q": "The middle size dinosaur is…",
+   "jp": "まんなかの大きさの恐竜は？",
+   "ans": "normal dino"
+  },
+  {
+   "q": "You want a big pet! Pick the biggest.",
+   "jp": "大きいペットがほしい！大きい恐竜は？",
+   "ans": "giant dino"
+  },
+  {
+   "q": "You want a small pet. Pick the smallest.",
+   "jp": "小さいペットがほしい。小さい恐竜は？",
+   "ans": "baby dino"
+  }
+ ],
+ "SIZE_INFO": [
+  {
+   "name": "baby dino",
+   "icon": "🦎",
+   "note": "just hatched",
+   "desc": "Small"
+  },
+  {
+   "name": "normal dino",
+   "icon": "🦕",
+   "note": "medium size",
+   "desc": "Medium"
+  },
+  {
+   "name": "giant dino",
+   "icon": "🦖",
+   "note": "huge and tall",
+   "desc": "Big"
+  }
+ ],
+ "QUIZ_DATA": [
+  {
+   "q": "What does 'big' mean?",
+   "ans": "大きい",
+   "wrong": [
+    "小さい",
+    "はやい",
+    "こわい"
+   ]
+  },
+  {
+   "q": "What does 'egg' mean?",
+   "ans": "たまご",
+   "wrong": [
+    "す",
+    "いわ",
+    "化石"
+   ]
+  },
+  {
+   "q": "Which one is scary?",
+   "ans": "T-rex",
+   "wrong": [
+    "turtle",
+    "lizard",
+    "triceratops"
+   ]
+  },
+  {
+   "q": "What do you find in rocks?",
+   "ans": "fossil",
+   "wrong": [
+    "nest",
+    "jungle",
+    "cave"
+   ]
+  },
+  {
+   "q": "What does 'volcano' mean?",
+   "ans": "火山",
+   "wrong": [
+    "たまご",
+    "ジャングル",
+    "ほら穴"
+   ]
+  },
+  {
+   "q": "What is 'jungle'?",
+   "ans": "ジャングル",
+   "wrong": [
+    "火山",
+    "たまご",
+    "化石"
+   ]
+  },
+  {
+   "q": "Which dinosaur is the biggest?",
+   "ans": "giant dino",
+   "wrong": [
+    "baby dino",
+    "lizard",
+    "turtle"
+   ]
+  },
+  {
+   "q": "What does 'cave' mean?",
+   "ans": "ほら穴",
+   "wrong": [
+    "火山",
+    "ジャングル",
+    "す"
+   ]
+  },
+  {
+   "q": "What does 'long' mean?",
+   "ans": "ながい",
+   "wrong": [
+    "たかい",
+    "はやい",
+    "おそい"
+   ]
+  },
+  {
+   "q": "What does 'fossil' mean?",
+   "ans": "化石",
+   "wrong": [
+    "たまご",
+    "いわ",
+    "足あと"
+   ]
+  }
+ ]
+}
+/*LESSON_DATA_END*/;
+// ============================================================
+// ▲▲▲ ここまでがデータ。以下は全テーマ共通のロジック（自動生成では触らない）▲▲▲
+// ============================================================
+const {META,VOCAB,LISTEN_DATA,PHRASE_DATA,SPOT_DATA,TYPING_DATA,WSORT_DATA,MATCH_DATA,RP_A,RP_B,
+       WAI_DATA,FINDIT_ROUNDS,ORDER_STEPS,SIZE_QS,SIZE_INFO,QUIZ_DATA} = LESSON;
+
+const BADGE_DEFS = [
+  {id:"badge0",emoji:"⌨️",name:"Typing Star"},
+  {id:"badge1",emoji:"🔀",name:"Sort Master"},
+  {id:"badge2",emoji:"🃏",name:"Match Master"},
+  {id:"badge3",emoji:"🤔",name:"Who Am I?"},
+  {id:"badge4",emoji:"🔍",name:"Find It! Star"},
+  {id:"badge5",emoji:"🎫",name:"Trip Master"},
+  {id:"badge6",emoji:"🚄",name:"Speed Expert"},
+  {id:"badge7",emoji:"🔎",name:"Detective"},
+  {id:"badge8",emoji:"📝",name:"Quiz Master"},
+  {id:"badge9",emoji:"🕵️",name:"Word Spotter"},
+];
+
+// ===== 共通ヘルパー =====
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g,
+  c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const shuffle = a => [...a].sort(() => Math.random() - 0.5);
+const hasJP = t => /[\u3000-\u9FFF]/.test(t);
+// 🔊ボタン。読み上げテキストは data-say に入れる（引用符を含んでも壊れない）
+function sayBtn(text, label = '🔊', style = '') {
+  return `<button class="speak-btn" data-say="${esc(text)}"${style ? ` style="${style}"` : ''}>${label}</button>`;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-say]');
+  if (b) speak(b.dataset.say, b);
+});
+
+// 画像URL（サービスを変えるときはこの1か所だけ直す）
+function imgUrl(keywords, n) {
+  const kw = String(keywords).split(',').map(s => encodeURIComponent(s.trim())).join(',');
+  return 'https://loremflickr.com/1200/800/' + kw + '?lock=' + (n || 1);
+}
+
+// ============================================================
+// 音声（iOS Safari 対策込み）
+// ============================================================
+let _selectedVoice = null, _lastSpokenText = "", _slowMode = false, _speakSeq = 0;
+
+function initVoice() {
+  const tryPick = () => {
+    const voices = speechSynthesis.getVoices();
+    if (!voices.length) return;
+    const preferred = ["Google US English","Google UK English Female","Samantha","Karen","Moira","Tessa"];
+    for (const name of preferred) {
+      const v = voices.find(v => v.name === name);
+      if (v) { _selectedVoice = v; return; }
+    }
+    const f = voices.find(v => v.lang.startsWith("en") && v.name.toLowerCase().includes("female"));
+    if (f) { _selectedVoice = f; return; }
+    const e = voices.find(v => v.lang.startsWith("en"));
+    _selectedVoice = e || voices[0];
+  };
+  tryPick();
+  speechSynthesis.onvoiceschanged = tryPick;
+  // iOS Safari: 読み上げが途中で止まるのを防ぐウォッチドッグ
+  setInterval(() => {
+    if (speechSynthesis.speaking && speechSynthesis.paused) speechSynthesis.resume();
+  }, 5000);
+}
+initVoice();
+
+async function _say(text, rate) {
+  const my = ++_speakSeq;
+  speechSynthesis.cancel();
+  await new Promise(r => setTimeout(r, 120));   // cancel直後のspeakは無音になるため待つ
+  if (my !== _speakSeq) return;                  // 連打時は最後の1回だけ読む
+  const u = new SpeechSynthesisUtterance(text);
+  if (_selectedVoice) u.voice = _selectedVoice;
+  u.lang = "en-US"; u.rate = rate; u.pitch = 1.1; u.volume = 1.0;
+  speechSynthesis.speak(u);
+}
+
+async function speak(text, btn = null) {
+  if (!text || hasJP(text)) return;
+  if (text === _lastSpokenText) { _slowMode = !_slowMode; } else { _slowMode = false; }
+  _lastSpokenText = text;
+  if (btn) {
+    const orig = btn.textContent;
+    btn.textContent = _slowMode ? "🐢" : "🔊";
+    btn.dataset.slow = _slowMode ? "1" : "0";
+    setTimeout(() => { btn.textContent = orig; }, 600);
+  }
+  return _say(text, _slowMode ? 0.52 : 0.82);
+}
+
+async function speakEN(text) {
+  if (!text || hasJP(text)) return;
+  return _say(text, 0.82);
+}
+
+// ============================================================
+// テーマ文言の反映
+// ============================================================
+function applyMeta() {
+  document.title = `${META.titleEn} | ${META.titleJp}`;
+  $('topTitle').textContent = `${META.titleEmoji} ${META.titleEn}`;
+  $('heroTitle').textContent = `${META.titleEmoji} ${META.titleEn}`;
+  $('heroJp').textContent = META.titleJp;
+  $('heroTopic').innerHTML = `Today we learn <strong style="color:var(--roast);">${VOCAB.length} words</strong> about ${esc(META.topic)}! 🌟`;
+  $('heroEmoji').textContent = META.titleEmoji;
+  const img = $('heroImg');
+  img.alt = META.heroAlt || '';
+  img.onerror = () => { img.style.display = 'none'; $('heroEmoji').style.display = 'block'; };
+  img.src = imgUrl(META.heroImg, 1);
+
+  $('introTitle').textContent = META.introTitle;
+  $('introSub').textContent = META.introSub;
+  $('introClosing').textContent = META.introClosing;
+  $('introGrid').innerHTML = META.introCards.map(c =>
+    `<div style="background:var(--roast-wash);border-radius:var(--radius-md);padding:14px;text-align:center;border:1px solid var(--roast-light);">
+       <div style="font-size:2rem;">${esc(c.emoji)}</div>
+       <div style="font-weight:700;color:var(--roast);font-family:var(--font-display);">${esc(c.en)}</div>
+       <div style="font-size:0.8rem;color:var(--espresso-soft);">${esc(c.jp)}</div></div>`).join('');
+
+  META.vocabTitles.forEach((t, i) => { $('vocabTitle' + (i + 1)).textContent = t; });
+  $('rpASub').textContent = META.rpASub;
+  $('rpBSub').textContent = META.rpBSub;
+  $('tripTitle').textContent = META.tripTitle;
+  $('tripSub').textContent = META.tripSub;
+  $('sizeTitle').textContent = META.sizeTitle;
+  $('sizeSub').textContent = META.sizeSub;
+  $('mikkeTitle').textContent = META.mikkeTitle;
+  $('mikkeSub').textContent = META.mikkeSub;
+  $('mikkeIcon').textContent = META.mikkeTarget;
+  $('summaryClosing').textContent = META.summaryClosing;
+  $('match-total').textContent = MATCH_DATA.length;
+  $('gameCount').textContent = BADGE_DEFS.length;
+  $('stampCount').textContent = BADGE_DEFS.length;
+  $('sz-total').textContent = SIZE_QS.length;
+  $('quiz-total').textContent = QUIZ_DATA.length;
+}
+
+// ============================================================
+// ナビゲーション
+// ============================================================
+const TOTAL_SLIDES = 21;
+let currentSlide = 0, score = 0;
+
+function buildDots() {
+  const c = $('dotContainer'); c.innerHTML = '';
+  for (let i = 0; i < TOTAL_SLIDES; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.onclick = () => goTo(i);
+    c.appendChild(d);
+  }
+}
+function goTo(n) {
+  document.querySelectorAll('.slide')[currentSlide].classList.remove('active');
+  document.querySelectorAll('.dot')[currentSlide].classList.remove('active');
+  currentSlide = Math.max(0, Math.min(n, TOTAL_SLIDES - 1));
+  document.querySelectorAll('.slide')[currentSlide].classList.add('active');
+  document.querySelectorAll('.dot')[currentSlide].classList.add('active');
+  $('slides').scrollTop = 0;
+  $('prevBtn').disabled = $('sideArrowPrev').disabled = currentSlide === 0;
+  $('nextBtn').disabled = $('sideArrowNext').disabled = currentSlide === TOTAL_SLIDES - 1;
+  if (currentSlide === TOTAL_SLIDES - 1) updateSummary();
+}
+function navigate(dir) { goTo(currentSlide + dir); }
+
+function addScore(n) { score += n; $('scoreDisplay').textContent = '⭐ ' + score; }
+function earnBadge(i) {
+  const s = $('badge' + i);
+  if (s && !s.classList.contains('earned')) { s.classList.add('earned'); confetti(50); addScore(20); }
+}
+function confetti(count = 30) {
+  const cs = getComputedStyle(document.documentElement);
+  const cols = ['--gold','--caramel','--roast','--cherry','--sky','--espresso-soft'].map(v => cs.getPropertyValue(v).trim());
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'confetti-piece';
+    p.style.cssText = `left:${Math.random()*100}vw;top:0;background:${cols[Math.floor(Math.random()*cols.length)]};
+      animation-delay:${Math.random()*0.8}s;animation-duration:${1.5+Math.random()}s;`;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 3000);
+  }
+}
+
+// ============================================================
+// 語彙 / リスニング / フレーズ
+// ============================================================
+function buildVocab() {
+  [1,2,3].forEach(set => {
+    const g = $('vocab' + set);
+    VOCAB.filter(v => v.set === set).forEach(v => {
+      const c = document.createElement('div');
+      c.className = 'vocab-card';
+      c.innerHTML = `<div style="font-size:1.8rem;">${esc(v.emoji)}</div>
+        <div class="vocab-en">${esc(v.en)}</div><div class="vocab-jp">${esc(v.jp)}</div>${sayBtn(v.en)}`;
+      g.appendChild(c);
+    });
+  });
+}
+function buildList(id, data, borderColor) {
+  const ul = $(id);
+  data.forEach(item => {
+    const li = document.createElement('li');
+    li.className = 'listen-item';
+    if (borderColor) li.style.borderLeftColor = borderColor;
+    li.innerHTML = `${sayBtn(item.en)}<div><div class="listen-en">${esc(item.en)}</div><div class="listen-jp">${esc(item.jp)}</div></div>`;
+    ul.appendChild(li);
+  });
+}
+
+// ============================================================
+// Spot the Words（文の中から目的の単語をタップ）
+// ============================================================
+let spotFound = 0, spotTotal = 0;
+function buildSpot() {
+  const S = SPOT_DATA;
+  $('spotTitle').textContent = S.title;
+  $('spotSub').textContent = S.sub;
+  $('spotInst').textContent = S.instruction;
+  $('spot-fb').textContent = '';
+  spotFound = 0; spotTotal = 0;
+  const targets = S.targets.map(t => t.toLowerCase());
+  const box = $('spotSentences'); box.innerHTML = '';
+  S.sentences.forEach(sent => {
+    const p = document.createElement('p');
+    p.className = 'spot-line';
+    sent.split(/\s+/).forEach((w, i, arr) => {
+      const bare = w.replace(/^[^A-Za-z0-9']+|[^A-Za-z0-9']+$/g, '').toLowerCase();
+      const span = document.createElement('span');
+      span.className = 'spot-word';
+      span.textContent = w;
+      const isT = targets.indexOf(bare) >= 0;
+      if (isT) spotTotal++;
+      span.onclick = function () { tapSpot(span, isT, bare); };
+      p.appendChild(span);
+      if (i < arr.length - 1) p.appendChild(document.createTextNode(' '));
+    });
+    box.appendChild(p);
+  });
+  $('spot-total').textContent = spotTotal;
+  $('spot-found').textContent = '0';
+}
+function tapSpot(el, isT, bare) {
+  if (el.classList.contains('found')) return;
+  if (isT) {
+    el.classList.add('found');
+    spotFound++;
+    $('spot-found').textContent = spotFound;
+    addScore(8); confetti(12); speakEN(bare);
+    if (spotFound >= spotTotal) {
+      $('spot-fb').style.color = 'var(--roast)';
+      $('spot-fb').textContent = '🎉 All words found! Amazing!';
+      earnBadge(9);
+    }
+  } else {
+    el.classList.add('wrong-tap');
+    setTimeout(() => el.classList.remove('wrong-tap'), 500);
+  }
+}
+
+// ============================================================
+// タイピング
+// ============================================================
+let tqIdx = 0, tqScore = 0, tqData = [];
+function buildTyping() {
+  tqData = shuffle(TYPING_DATA); tqIdx = 0; tqScore = 0;
+  $('tq-total').textContent = tqData.length;
+  showTypingQ();
+}
+function showTypingQ() {
+  const area = $('typingArea');
+  if (tqIdx >= tqData.length) {
+    area.innerHTML = `<div style="text-align:center;font-size:1.3rem;color:var(--roast);font-family:var(--font-display);">🎉 Finished! Score: ${tqScore}/${tqData.length}</div>`;
+    if (tqScore >= tqData.length - 1) earnBadge(0);
+    return;
+  }
+  const q = tqData[tqIdx];
+  $('tq-num').textContent = tqIdx + 1;
+  area.innerHTML = `
+    <div class="typing-hint">💡 ヒント: ${esc(q.hint)}</div>
+    <div style="margin-bottom:10px;">${sayBtn(q.word, '🔊 Listen', 'width:auto;font-size:0.9rem;padding:6px 16px;')}</div>
+    <input class="typing-input" id="tInput" type="text" placeholder="Type here..."
+           autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"><br>
+    <button class="check-btn" onclick="checkTyping()">✅ Check!</button>
+    <div class="feedback" id="t-fb"></div>`;
+  setTimeout(() => {
+    const inp = $('tInput');
+    if (inp) { inp.focus(); inp.addEventListener('keydown', e => { if (e.key === 'Enter') checkTyping(); }); }
+  }, 100);
+}
+function checkTyping() {
+  const inp = $('tInput'), fb = $('t-fb');
+  if (!inp || !fb) return;
+  const q = tqData[tqIdx];
+  if (inp.value.trim().toLowerCase() === q.word.toLowerCase()) {
+    fb.style.color = 'var(--roast)'; fb.textContent = '✅ Correct! Great job!';
+    tqScore++; addScore(10); confetti(20); tqIdx++;
+    setTimeout(showTypingQ, 1000);
+  } else {
+    fb.style.color = 'var(--cherry)'; fb.textContent = `❌ Try again! (starts with "${q.first}")`;
+    inp.value = ''; inp.focus();
+  }
+}
+
+// ============================================================
+// ワードソート
+// ============================================================
+let wsIdx = 0, wsScore = 0, wsPlaced = [], wsData = [];
+function buildWSort() {
+  wsData = shuffle(WSORT_DATA); wsIdx = 0; wsScore = 0;
+  $('ws-total').textContent = wsData.length;
+  showWSort();
+}
+function showWSort() {
+  if (wsIdx >= wsData.length) {
+    $('wsort-hint').textContent = '🎉 All done!';
+    $('wsort-tiles').innerHTML = '';
+    $('wsort-answer').innerHTML = `<span style="color:var(--roast);font-size:1.15rem;font-family:var(--font-display);">Score: ${wsScore}/${wsData.length} 🌟</span>`;
+    if (wsScore >= wsData.length - 1) earnBadge(1);
+    return;
+  }
+  const q = wsData[wsIdx];
+  $('ws-num').textContent = wsIdx + 1;
+  $('wsort-hint').textContent = '💡 ヒント: ' + q.hint;
+  $('wsort-answer').innerHTML = '';
+  $('wsort-fb').textContent = '';
+  wsPlaced = [];
+  const td = $('wsort-tiles'); td.innerHTML = '';
+  shuffle(q.word.split('')).forEach(ch => {
+    const btn = document.createElement('button');
+    btn.className = 'tile'; btn.textContent = ch;
+    btn.onclick = function () { placeTile(this, ch); };
+    td.appendChild(btn);
+  });
+}
+function placeTile(btn, ch) {
+  if (btn.classList.contains('placed')) return;
+  btn.classList.add('placed');
+  wsPlaced.push(ch);
+  const sp = document.createElement('span');
+  sp.className = 'tile placed'; sp.textContent = ch; sp.style.cursor = 'default';
+  $('wsort-answer').appendChild(sp);
+}
+function checkWSort() {
+  if (wsIdx >= wsData.length) return;
+  const q = wsData[wsIdx], fb = $('wsort-fb');
+  if (wsPlaced.join('') === q.word) {
+    fb.style.color = 'var(--roast)'; fb.textContent = '✅ Correct!';
+    wsScore++; addScore(10); confetti(20); wsIdx++;
+    speakEN(q.word);
+    setTimeout(showWSort, 1000);
+  } else {
+    fb.style.color = 'var(--cherry)'; fb.textContent = '❌ Try again!';
+  }
+}
+function resetWSort() { wsPlaced = []; showWSort(); }
+
+// ============================================================
+// 神経衰弱（え×えいご / 日本語×えいご の2モード）
+// ============================================================
+let matchFlipped = [], matchMatched = 0, matchTotal = 0, isChecking = false, matchMode = 'pic';
+
+function setMatchMode(m) {
+  matchMode = m;
+  $('modePic').classList.toggle('active', m === 'pic');
+  $('modeJp').classList.toggle('active', m === 'jp');
+  $('matchSub').textContent = m === 'pic' ? '絵文字とスペルをマッチしよう！' : '英語と日本語をむすぼう！';
+  initMatch();
+}
+
+function initMatch() {
+  matchFlipped = []; matchMatched = 0; isChecking = false;
+  const grid = $('matchGrid'); grid.innerHTML = '';
+  grid.className = 'match-grid' + (matchMode === 'jp' ? ' jp' : '');
+
+  let pairs;
+  if (matchMode === 'jp') {
+    // 単語リストから、英語も日本語も重複しない6組をランダムに選ぶ
+    const seen = new Set();
+    pairs = shuffle(VOCAB).filter(v => {
+      if (seen.has(v.en) || seen.has(v.jp)) return false;
+      seen.add(v.en); seen.add(v.jp); return true;
+    }).slice(0, 6).map(v => ({a: v.en, b: v.jp, key: v.en}));
+  } else {
+    pairs = MATCH_DATA.map(p => ({a: p.emoji, b: p.en, key: p.en}));
+  }
+  matchTotal = pairs.length;
+  $('match-pairs').textContent = '0';
+  $('match-total').textContent = matchTotal;
+
+  const cards = [];
+  pairs.forEach(p => {
+    cards.push({display: p.a, key: p.key, big: matchMode === 'pic'});
+    cards.push({display: p.b, key: p.key, big: false});
+  });
+  shuffle(cards).forEach(c => {
+    const wrap = document.createElement('div');
+    wrap.className = 'mcard-wrap';
+    wrap.dataset.pairKey = c.key;
+    wrap.dataset.sayText = c.key;
+    wrap.onclick = function () { flipCard(this); };
+    const style = c.big ? 'font-size:2rem;'
+      : (matchMode === 'jp' ? 'font-size:1.05rem;font-weight:900;' : 'font-size:0.85rem;font-weight:900;');
+    wrap.innerHTML = `<div class="mcard">
+        <div class="mcard-front">${esc(META.cardBack)}</div>
+        <div class="mcard-back" style="${style}">${esc(c.display)}</div></div>`;
+    grid.appendChild(wrap);
+  });
+}
+function flipCard(wrap) {
+  const card = wrap.querySelector('.mcard');
+  if (card.classList.contains('flipped') || card.classList.contains('matched') || isChecking) return;
+  card.classList.add('flipped');
+  speakEN(wrap.dataset.sayText);
+  matchFlipped.push(wrap);
+  if (matchFlipped.length === 2) { isChecking = true; setTimeout(checkMatch, 900); }
+}
+function checkMatch() {
+  const [a, b] = matchFlipped;
+  const ac = a.querySelector('.mcard'), bc = b.querySelector('.mcard');
+  if (a.dataset.pairKey === b.dataset.pairKey && a !== b) {
+    ac.classList.add('matched'); bc.classList.add('matched');
+    matchMatched++;
+    $('match-pairs').textContent = matchMatched;
+    addScore(15);
+    speakEN(a.dataset.sayText);
+    if (matchMatched === matchTotal) { confetti(60); earnBadge(2); }
+  } else {
+    setTimeout(() => { ac.classList.remove('flipped'); bc.classList.remove('flipped'); }, 400);
+  }
+  matchFlipped = []; isChecking = false;
+}
+
+// ============================================================
+// ロールプレイ
+// ============================================================
+function buildRP() {
+  [['rpA', RP_A], ['rpB', RP_B]].forEach(([id, data]) => {
+    const container = $(id);
+    data.forEach(r => {
+      const isB = r.who === 'B';
+      const row = document.createElement('div');
+      row.className = 'rp-row ' + (isB ? 'row-b' : 'row-a');
+      row.innerHTML = `
+        <div class="rp-avatar">${esc(r.avatar)}</div>
+        <div class="rp-bubble-wrap">
+          <div class="rp-speech"><div class="rp-en">${esc(r.en)}</div><div class="rp-jp">${esc(r.jp)}</div></div>
+          <div class="rp-speak-wrap">${sayBtn(r.en)}</div>
+        </div>`;
+      container.appendChild(row);
+    });
+  });
+}
+
+// ============================================================
+// Who Am I?（ヒントを1つずつ出す。少ないヒントで当てるほど高得点）
+// ============================================================
+let waiIdx = 0, waiScore = 0, waiData = [], waiShown = 1, waiLocked = false;
+function buildWAI() { waiData = shuffle(WAI_DATA); waiIdx = 0; waiScore = 0; showWAI(); }
+
+function renderClues(q) {
+  $('waiClues').innerHTML = q.clues.slice(0, waiShown)
+    .map(c => `<p style="margin:0 0 10px;">🔍 ${esc(c)}</p>`).join('');
+  $('waiNext').disabled = waiLocked || waiShown >= q.clues.length;
+}
+
+function showWAI() {
+  const area = $('waiArea');
+  if (waiIdx >= waiData.length) {
+    area.innerHTML = `<div style="text-align:center;font-size:1.25rem;color:var(--roast);font-family:var(--font-display);">🎉 All done! Score: ${waiScore}/${waiData.length}</div>`;
+    if (waiScore >= waiData.length - 1) earnBadge(3);
+    return;
+  }
+  const q = waiData[waiIdx];
+  waiShown = 1; waiLocked = false;
+  area.innerHTML = `
+    <div style="text-align:center;color:var(--caramel-dark);font-weight:700;font-family:var(--font-display);font-size:1.15rem;margin-bottom:12px;">
+      Q${waiIdx + 1} of ${waiData.length} – Who am I?</div>
+    <div id="waiClues" style="background:var(--caramel-wash);border:1px solid var(--caramel);border-radius:var(--radius-sm);padding:22px 22px 12px;margin-bottom:16px;font-size:1.15rem;min-height:70px;"></div>
+    <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:18px;">
+      <button class="check-btn" id="waiNext" style="margin-top:0;">Next Clue 💡</button>
+      <button class="check-btn" id="waiShow" style="margin-top:0;background:var(--caramel);">Show Answer ✅</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      ${shuffle(q.choices).map(ch => `<button class="choice-btn" data-choice="${esc(ch)}">${esc(ch)}</button>`).join('')}
+    </div>
+    <div class="feedback" id="wai-fb" style="text-align:center;margin-top:14px;font-size:1.15rem;"></div>`;
+  renderClues(q);
+  $('waiNext').onclick = () => {
+    if (waiLocked || waiShown >= q.clues.length) return;
+    waiShown++; renderClues(q);
+  };
+  $('waiShow').onclick = () => finishWAI(q, null, null);
+  area.querySelectorAll('.choice-btn').forEach(b => { b.onclick = () => finishWAI(q, b.dataset.choice, b); });
+}
+
+// choice === null のときは「Show Answer」（得点なし）
+function finishWAI(q, choice, btn) {
+  if (waiLocked) return;
+  waiLocked = true;
+  $('waiNext').disabled = true; $('waiShow').disabled = true;
+  const buttons = document.querySelectorAll('#waiArea .choice-btn');
+  buttons.forEach(b => b.disabled = true);
+  const fb = $('wai-fb');
+  const showCorrect = () => buttons.forEach(b => { if (b.dataset.choice === q.answer) b.classList.add('correct'); });
+
+  if (choice === q.answer) {
+    btn.classList.add('correct');
+    const pts = Math.max(4, 12 - (waiShown - 1) * 2);   // ヒント1つ=12点、2つ=10点、3つ=8点…
+    fb.style.color = 'var(--roast)';
+    fb.textContent = `✅ Correct! +${pts}`;
+    waiScore++; addScore(pts); confetti(20);
+  } else if (choice === null) {
+    showCorrect();
+    fb.style.color = 'var(--caramel-dark)';
+    fb.textContent = `💡 Answer: "${q.answer}"`;
+  } else {
+    btn.classList.add('wrong'); showCorrect();
+    fb.style.color = 'var(--cherry)';
+    fb.textContent = `❌ Answer: "${q.answer}"`;
+  }
+  speakEN(q.answer);
+  waiIdx++;
+  setTimeout(showWAI, 1800);
+}
+
+// ============================================================
+// Find It!
+// ============================================================
+let fiRound = 0, fiFound = 0;
+function buildFindIt() { fiRound = 0; showFI(); }
+function showFI() {
+  if (fiRound >= FINDIT_ROUNDS.length) {
+    $('fi-target').textContent = '🎉 All rounds done!';
+    $('findGrid').innerHTML = '';
+    earnBadge(4); return;
+  }
+  const round = FINDIT_ROUNDS[fiRound];
+  fiFound = 0;
+  $('fi-found').textContent = '0';
+  $('fi-fb').textContent = '';
+  $('fi-target').textContent = round.target;
+  const grid = $('findGrid'); grid.innerHTML = '';
+  shuffle(round.cells).forEach(cell => {
+    const div = document.createElement('div');
+    div.className = 'fi-item';
+    div.textContent = cell.label;
+    div.dataset.isTarget = cell.t ? '1' : '0';
+    div.onclick = function () { tapFI(this, round.needCount); };
+    grid.appendChild(div);
+  });
+}
+function tapFI(el, needCount) {
+  if (el.classList.contains('found')) return;
+  if (el.dataset.isTarget === '1') {
+    el.classList.add('found');
+    fiFound++;
+    $('fi-found').textContent = fiFound;
+    addScore(8); confetti(15);
+    const word = el.textContent.replace(/[^\x00-\x7F]/g, '').trim();
+    if (word) speakEN(word);
+    if (fiFound >= needCount) {
+      $('fi-fb').style.color = 'var(--roast)';
+      $('fi-fb').textContent = '🎉 Round clear!';
+      fiRound++;
+      setTimeout(showFI, 1300);
+    }
+  } else {
+    el.classList.add('wrong-tap');
+    setTimeout(() => el.classList.remove('wrong-tap'), 500);
+  }
+}
+
+// ============================================================
+// Build（注文／きっぷ作り）
+// ============================================================
+let orderSelection = {};
+function buildOrder() {
+  const container = $('orderSteps'); container.innerHTML = '';
+  ORDER_STEPS.forEach(step => {
+    const div = document.createElement('div');
+    div.style.marginBottom = '12px';
+    div.innerHTML = `<p style="font-weight:700;color:var(--roast);margin-bottom:6px;font-family:var(--font-display);">
+      ${esc(step.label)} <span style="color:var(--espresso-soft);font-size:0.85rem;font-family:var(--font-body);">${esc(step.jp)}</span></p>
+      <div class="order-options"></div>`;
+    container.appendChild(div);
+    const optDiv = div.querySelector('.order-options');
+    step.options.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.className = 'order-opt';
+      btn.textContent = opt.text;
+      btn.dataset.key = step.key;
+      btn.onclick = function () { selectOrder(this, opt.say); };
+      optDiv.appendChild(btn);
+    });
+  });
+}
+function selectOrder(btn, say) {
+  const key = btn.dataset.key;
+  document.querySelectorAll('.order-opt').forEach(b => { if (b.dataset.key === key) b.classList.remove('selected'); });
+  btn.classList.add('selected');
+  orderSelection[key] = say;
+  speakEN(say);
+  updateCupDisplay();
+}
+function updateCupDisplay() {
+  const parts = ORDER_STEPS.map(s => orderSelection[s.key] || '___').filter(v => v !== 'none');
+  $('cupDisplay').textContent = META.tripEmoji + ' ' + parts.join(' · ');
+}
+function submitOrder() {
+  const fb = $('order-fb');
+  if (ORDER_STEPS.some(s => !orderSelection[s.key])) {
+    fb.style.color = 'var(--cherry)'; fb.textContent = '❌ まだえらんでいないものがあるよ！'; return;
+  }
+  fb.style.color = 'var(--roast)'; fb.textContent = '✅ Perfect! Great job!';
+  confetti(40); earnBadge(5); addScore(20);
+  const sentence = META.tripSentence
+    .replace(/\{(\w+)\}/g, (m, k) => orderSelection[k] === 'none' ? '' : (orderSelection[k] || ''))
+    .replace(/\s+/g, ' ').trim();
+  speakEN(sentence);
+}
+function resetOrder() {
+  orderSelection = {};
+  document.querySelectorAll('.order-opt').forEach(b => b.classList.remove('selected'));
+  $('cupDisplay').textContent = META.tripEmoji + ' ' + META.tripPlaceholder;
+  $('order-fb').textContent = '';
+}
+
+// ============================================================
+// Which one?（3択スピードゲーム）
+// ============================================================
+let szIdx = 0, szScore = 0, szData = [];
+function buildSizeGame() {
+  szData = shuffle(SIZE_QS); szIdx = 0; szScore = 0;
+  const cardsDiv = $('sizeCards'); cardsDiv.innerHTML = '';
+  SIZE_INFO.forEach(s => {
+    const div = document.createElement('div');
+    div.className = 'size-card';
+    div.dataset.sizeName = s.name;
+    div.innerHTML = `<div style="font-size:2.1rem;margin-bottom:6px;">${esc(s.icon)}</div>
+      <div style="font-size:1rem;font-weight:700;color:var(--roast);font-family:var(--font-display);">${esc(s.name)}</div>
+      <div style="font-size:0.78rem;color:var(--espresso-soft);">${esc(s.note)} · ${esc(s.desc)}</div>`;
+    div.onclick = function () { checkSize(this); };
+    cardsDiv.appendChild(div);
+  });
+  showSizeQ();
+}
+function showSizeQ() {
+  const qDiv = $('sizeQuestion');
+  if (szIdx >= szData.length) {
+    qDiv.textContent = `🎉 All done! Score: ${szScore}/${szData.length}`;
+    if (szScore >= szData.length - 1) earnBadge(6);
+    document.querySelectorAll('.size-card').forEach(c => c.style.pointerEvents = 'none');
+    return;
+  }
+  const q = szData[szIdx];
+  $('sz-num').textContent = szIdx + 1;
+  qDiv.innerHTML = `${esc(q.q)}<br><span style="font-size:0.85rem;color:var(--espresso-soft);">${esc(q.jp)}</span>`;
+  document.querySelectorAll('.size-card').forEach(c => { c.classList.remove('correct-pick', 'wrong-pick'); c.style.pointerEvents = ''; });
+  $('size-fb').textContent = '';
+}
+function checkSize(card) {
+  const name = card.dataset.sizeName, q = szData[szIdx];
+  document.querySelectorAll('.size-card').forEach(c => c.style.pointerEvents = 'none');
+  const fb = $('size-fb');
+  if (name === q.ans) {
+    card.classList.add('correct-pick');
+    fb.style.color = 'var(--roast)'; fb.textContent = '✅ Correct!';
+    szScore++; addScore(10); confetti(20); speakEN(name);
+  } else {
+    card.classList.add('wrong-pick');
+    document.querySelectorAll('.size-card').forEach(c => { if (c.dataset.sizeName === q.ans) c.classList.add('correct-pick'); });
+    fb.style.color = 'var(--cherry)'; fb.textContent = `❌ The answer is "${q.ans}"!`;
+  }
+  szIdx++;
+  setTimeout(showSizeQ, 1200);
+}
+
+// ============================================================
+// Detective（かくれたものさがし）
+// ============================================================
+const MIKKE_TOTAL = 5;
+let mikkeFound = 0;
+function buildMikke() {
+  mikkeFound = 0;
+  $('mikke-fb').textContent = '';
+  $('mikke-remain').textContent = MIKKE_TOTAL;
+  const grid = $('mikkeGrid'); grid.innerHTML = '';
+  const all = [];
+  for (let i = 0; i < MIKKE_TOTAL; i++) all.push({em: META.mikkeTarget, hidden: true});
+  META.mikkeDecoys.forEach(em => all.push({em, hidden: false}));
+  shuffle(all).forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'mikke-cell';
+    div.textContent = item.em;
+    div.dataset.hidden = item.hidden ? '1' : '0';
+    div.onclick = function () { tapMikke(this); };
+    grid.appendChild(div);
+  });
+}
+function tapMikke(el) {
+  if (el.classList.contains('found-m')) return;
+  if (el.dataset.hidden === '1') {
+    el.classList.add('found-m');
+    mikkeFound++;
+    addScore(8); confetti(15); speakEN(META.mikkeSay);
+    $('mikke-remain').textContent = MIKKE_TOTAL - mikkeFound;
+    if (mikkeFound >= MIKKE_TOTAL) {
+      $('mikke-fb').style.color = 'var(--roast)';
+      $('mikke-fb').textContent = '🎉 All found!';
+      earnBadge(7);
+    }
+  } else {
+    el.classList.add('wrong-m');
+    el.style.background = 'var(--cherry-wash)';
+    setTimeout(() => { el.style.background = ''; el.classList.remove('wrong-m'); }, 400);
+  }
+}
+
+// ============================================================
+// Quiz
+// ============================================================
+let quizIdx = 0, quizScore = 0, quizData = [];
+function buildQuiz() {
+  quizData = shuffle(QUIZ_DATA); quizIdx = 0; quizScore = 0;
+  $('quiz-score-disp').textContent = '0';
+  showQuiz();
+}
+function showQuiz() {
+  const qDiv = $('quiz-q'), choicesDiv = $('quiz-choices'), fb = $('quiz-fb');
+  if (quizIdx >= quizData.length) {
+    qDiv.textContent = '🎉 Quiz done!';
+    choicesDiv.innerHTML = '';
+    $('quiz-progress').textContent = '';
+    fb.style.color = 'var(--roast)';
+    fb.textContent = `Final Score: ${quizScore}/${quizData.length}`;
+    if (quizScore >= quizData.length - 2) earnBadge(8);
+    return;
+  }
+  const q = quizData[quizIdx];
+  $('quiz-progress').textContent = `Question ${quizIdx + 1} / ${quizData.length}`;
+  qDiv.textContent = q.q;
+  $('quiz-score-disp').textContent = quizScore;
+  fb.textContent = '';
+  choicesDiv.innerHTML = '';
+  shuffle([q.ans, ...q.wrong]).forEach(ch => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.textContent = ch;
+    btn.onclick = function () { checkQuiz(ch, q.ans, this); };
+    choicesDiv.appendChild(btn);
+  });
+}
+function checkQuiz(choice, answer, btn) {
+  document.querySelectorAll('#quiz-choices .choice-btn').forEach(b => b.disabled = true);
+  const fb = $('quiz-fb');
+  if (choice === answer) {
+    btn.classList.add('correct');
+    fb.style.color = 'var(--roast)'; fb.textContent = '✅ Correct!';
+    quizScore++; addScore(10); confetti(15);
+    if (!hasJP(answer)) speakEN(answer);
+  } else {
+    btn.classList.add('wrong');
+    document.querySelectorAll('#quiz-choices .choice-btn').forEach(b => { if (b.textContent === answer) b.classList.add('correct'); });
+    fb.style.color = 'var(--cherry)'; fb.textContent = `❌ Answer: "${answer}"`;
+  }
+  $('quiz-score-disp').textContent = quizScore;
+  quizIdx++;
+  setTimeout(showQuiz, 1200);
+}
+
+// ============================================================
+// レビュー / サマリー / リスタート
+// ============================================================
+function buildReview() {
+  const grid = $('reviewGrid');
+  VOCAB.forEach(v => {
+    const div = document.createElement('div');
+    div.className = 'review-card';
+    div.innerHTML = `<div style="font-size:1.5rem;">${esc(v.emoji)}</div>
+      <div style="font-size:1rem;font-weight:700;color:var(--roast);font-family:var(--font-display);">${esc(v.en)}</div>
+      <div style="font-size:0.8rem;color:var(--espresso-soft);margin-top:3px;">${esc(v.jp)}</div>
+      <div style="margin-top:6px;">${sayBtn(v.en)}</div>`;
+    grid.appendChild(div);
+  });
+}
+function updateSummary() {
+  $('final-score').textContent = score;
+  const sb = $('summaryBadges'); sb.innerHTML = '';
+  BADGE_DEFS.forEach(b => {
+    const slot = $(b.id);
+    const earned = slot && slot.classList.contains('earned');
+    const div = document.createElement('div');
+    div.className = 'sum-badge' + (earned ? ' earned' : '');
+    div.innerHTML = `<div style="font-size:1.5rem;">${b.emoji}</div>
+      <div style="font-size:0.8rem;margin-top:4px;color:${earned ? 'var(--roast)' : 'var(--espresso-soft)'};font-family:var(--font-display);">${b.name}</div>`;
+    sb.appendChild(div);
+  });
+}
+function restartAll() {
+  score = 0;
+  $('scoreDisplay').textContent = '⭐ 0';
+  document.querySelectorAll('.badge-slot').forEach(b => b.classList.remove('earned'));
+  buildSpot(); buildTyping(); buildWSort(); setMatchMode('pic'); buildWAI(); buildFindIt();
+  resetOrder(); buildSizeGame(); buildMikke(); buildQuiz();
+  goTo(0);
+}
+
+// ============================================================
+// アンビエント（パーティクル）— 色は META.particleColor（"r,g,b"）
+// ============================================================
+(function () {
+  const canvas = $('starCanvas'), ctx = canvas.getContext('2d');
+  let bubbles = [];
+  function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+  function initBubbles() {
+    bubbles = Array.from({length: 22}, () => ({
+      x: Math.random() * canvas.width, y: canvas.height + Math.random() * 200,
+      r: Math.random() * 10 + 4, speed: Math.random() * 0.25 + 0.08,
+      a: Math.random() * 0.08 + 0.04, drift: (Math.random() - 0.5) * 0.3
+    }));
+  }
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    bubbles.forEach(b => {
+      b.y -= b.speed; b.x += b.drift;
+      if (b.y < -20) { b.y = canvas.height + 20; b.x = Math.random() * canvas.width; }
+      ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${META.particleColor},${b.a})`; ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  resize(); initBubbles(); draw();
+  window.addEventListener('resize', () => { resize(); initBubbles(); });
+})();
+
+document.addEventListener('keydown', e => {
+  if (e.target && e.target.tagName === 'INPUT') return;
+  if (e.key === 'ArrowRight') navigate(1);
+  if (e.key === 'ArrowLeft')  navigate(-1);
+});
+
+// ============================================================
+// 初期化
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  applyMeta();
+  buildDots(); buildVocab();
+  buildList('listenList', LISTEN_DATA);
+  buildList('phraseList', PHRASE_DATA, 'var(--caramel)');
+  buildSpot(); buildTyping(); buildWSort(); setMatchMode('pic'); buildRP(); buildWAI(); buildFindIt();
+  buildOrder(); resetOrder();
+  buildSizeGame(); buildMikke(); buildQuiz(); buildReview();
+});
+</script>
+</body>
+</html>
